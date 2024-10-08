@@ -9,7 +9,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.chess.R
 
@@ -155,7 +154,18 @@ fun isValidMove(
 
     // Verhindere das Bewegen auf ein Feld mit einer eigenen Figur
     val targetPiece = board[toRow][toCol]
-
+    if (targetPiece != 0) { // Wenn das Zielfeld nicht leer ist
+        val targetIsWhite = when (targetPiece) {
+            R.drawable.white_pawn, R.drawable.white_rook,
+            R.drawable.white_knight, R.drawable.white_bishop,
+            R.drawable.white_queen, R.drawable.white_king -> true
+            R.drawable.black_pawn, R.drawable.black_rook,
+            R.drawable.black_knight, R.drawable.black_bishop,
+            R.drawable.black_queen, R.drawable.black_king -> false
+            else -> return false
+        }
+        if (isWhite == targetIsWhite) return false // Wenn das Zielfeld eine eigene Figur hat, ist der Zug ungültig
+    }
 
     return when (piece) {
         R.drawable.white_pawn, R.drawable.black_pawn -> isValidPawnMove(board, fromRow, fromCol, toRow, toCol, isWhite)
@@ -167,6 +177,7 @@ fun isValidMove(
         else -> false
     }
 }
+
 
 fun isValidPawnMove(
     board: Array<Array<Int>>,
