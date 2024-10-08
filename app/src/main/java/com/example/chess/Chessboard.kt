@@ -29,8 +29,16 @@ val initialBoardWithImages = arrayOf(
 fun ChessBoard() {
     var boardState by remember { mutableStateOf(initialBoardWithImages) }
     var selectedPiece by remember { mutableStateOf<Pair<Int, Int>?>(null) }
+    var fenNotation by remember { mutableStateOf(calculateFEN(boardState)) } // FEN wird basierend auf dem aktuellen Zustand berechnet
 
     Column {
+        // FEN-Notation wird im Textfeld angezeigt
+        Text(
+            text = "FEN: $fenNotation",
+            modifier = Modifier.padding(16.dp)
+        )
+
+        // Schachbrett mit Feldern
         for (row in 0..7) {
             Row {
                 for (col in 0..7) {
@@ -48,7 +56,9 @@ fun ChessBoard() {
                                 val piece = boardState[selectedRow][selectedCol]
 
                                 if (isValidMove(boardState, selectedRow, selectedCol, clickedRow, clickedCol, piece)) {
+                                    // Aktualisiere das Schachbrett und FEN nach dem Zug
                                     boardState = boardState.movePiece(selectedRow, selectedCol, clickedRow, clickedCol)
+                                    fenNotation = calculateFEN(boardState) // FEN-Notation nach dem Zug berechnen
                                 }
                                 selectedPiece = null // Auswahl zurücksetzen
                             }
@@ -59,6 +69,7 @@ fun ChessBoard() {
         }
     }
 }
+
 
 // Funktion, die das Verschieben der Figur umsetzt
 fun Array<Array<Int>>.movePiece(fromRow: Int, fromCol: Int, toRow: Int, toCol: Int): Array<Array<Int>> {
@@ -229,4 +240,52 @@ fun isValidKingMove(fromRow: Int, fromCol: Int, toRow: Int, toCol: Int): Boolean
     val rowDiff = Math.abs(fromRow - toRow)
     val colDiff = Math.abs(fromCol - toCol)
     return rowDiff <= 1 && colDiff <= 1
+}
+
+
+fun calculateFEN(board: Array<Array<Int>>): String {
+    val pieceMap = mapOf(
+        R.drawable.white_pawn to "P",
+        R.drawable.white_rook to "R",
+        R.drawable.white_knight to "N",
+        R.drawable.white_bishop to "B",
+        R.drawable.white_queen to "Q",
+        R.drawable.white_king to "K",
+        R.drawable.black_pawn to "p",
+        R.drawable.black_rook to "r",
+        R.drawable.black_knight to "n",
+        R.drawable.black_bishop to "b",
+        R.drawable.black_queen to "q",
+        R.drawable.black_king to "k"
+    )
+
+    var fen = ""
+
+    for (row in board) {
+        var emptyCount = 0
+
+        for (piece in row) {
+            if (piece == 0) {
+                emptyCount++
+            } else {
+                if (emptyCount > 0) {
+                    fen += emptyCount
+                    emptyCount = 0
+                }
+                fen += pieceMap[piece] ?: ""
+            }
+        }
+
+        if (emptyCount > 0) {
+            fen += emptyCount
+        }
+
+        fen += "/"
+    }
+
+    fen = fen.dropLast(1) // Entferne das letzte "/"
+
+    fen += " w - - 0 1" // Standardmäßig "weiß am Zug", keine Rochaderechte, keine En passant-Möglichkeit, kein Zugzähler
+
+    return fen
 }
