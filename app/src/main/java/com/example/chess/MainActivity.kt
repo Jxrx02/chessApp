@@ -1,10 +1,8 @@
 package com.example.chess
 
-import ChessBoard
-import ChessTileWithPiece
-import android.content.Context
+// import android.content.Context
 import android.os.Bundle
-import android.widget.Toast
+// import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -35,8 +33,8 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
     )
 }
 
-fun Context.toast(message: CharSequence) =
-    Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+// fun Context.toast(message: CharSequence) =
+//    Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
 
 @Preview(showBackground = true)
 @Composable

@@ -1,3 +1,5 @@
+package com.example.chess
+
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -10,7 +12,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import com.example.chess.R
+import kotlin.math.abs
 
 // Beispiel-Schachbrett mit Bild-Ressourcen
 val initialBoardWithImages = arrayOf(
@@ -200,7 +202,7 @@ fun isValidPawnMove(
     }
 
     // Schlagen (diagonale Bewegung)
-    if (Math.abs(fromCol - toCol) == 1 && toRow == fromRow + direction && board[toRow][toCol] != 0) {
+    if (abs(fromCol - toCol) == 1 && toRow == fromRow + direction && board[toRow][toCol] != 0) {
         return true
     }
 
@@ -233,8 +235,8 @@ fun isValidRookMove(
 
 // Beispiel: Überprüfe Springer-Zug
 fun isValidKnightMove(fromRow: Int, fromCol: Int, toRow: Int, toCol: Int): Boolean {
-    val rowDiff = Math.abs(fromRow - toRow)
-    val colDiff = Math.abs(fromCol - toCol)
+    val rowDiff = abs(fromRow - toRow)
+    val colDiff = abs(fromCol - toCol)
     return (rowDiff == 2 && colDiff == 1) || (rowDiff == 1 && colDiff == 2)
 }
 
@@ -244,7 +246,7 @@ fun isValidBishopMove(
     fromRow: Int, fromCol: Int,
     toRow: Int, toCol: Int
 ): Boolean {
-    if (Math.abs(fromRow - toRow) != Math.abs(fromCol - toCol)) return false
+    if (abs(fromRow - toRow) != abs(fromCol - toCol)) return false
 
     val rowDirection = if (toRow > fromRow) 1 else -1
     val colDirection = if (toCol > fromCol) 1 else -1
@@ -271,8 +273,8 @@ fun isValidQueenMove(
 
 // Beispiel: Überprüfe König-Zug
 fun isValidKingMove(fromRow: Int, fromCol: Int, toRow: Int, toCol: Int): Boolean {
-    val rowDiff = Math.abs(fromRow - toRow)
-    val colDiff = Math.abs(fromCol - toCol)
+    val rowDiff = abs(fromRow - toRow)
+    val colDiff = abs(fromCol - toCol)
     return rowDiff <= 1 && colDiff <= 1
 }
 
