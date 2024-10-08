@@ -29,6 +29,7 @@ val initialBoardWithImages = arrayOf(
 fun ChessBoard() {
     var boardState by remember { mutableStateOf(initialBoardWithImages) }
     var selectedPiece by remember { mutableStateOf<Pair<Int, Int>?>(null) }
+    var possibleMoves by remember { mutableStateOf<List<Pair<Int, Int>>>(emptyList()) }
     var fenNotation by remember { mutableStateOf(calculateFEN(boardState)) } // FEN wird basierend auf dem aktuellen Zustand berechnet
 
     Column {
@@ -42,15 +43,19 @@ fun ChessBoard() {
         for (row in 0..7) {
             Row {
                 for (col in 0..7) {
+                    val isPossibleMove = possibleMoves.contains(Pair(row, col))
+
                     ChessTileWithPiece(
                         row = row,
                         col = col,
                         pieceResId = boardState[row][col],
                         isSelected = selectedPiece == Pair(row, col),
+                        isPossibleMove = isPossibleMove,
                         onTileClick = { clickedRow, clickedCol ->
                             if (selectedPiece == null && boardState[clickedRow][clickedCol] != 0) {
                                 // Wenn ein Feld mit einer Figur angeklickt wird, wird sie ausgewählt
                                 selectedPiece = Pair(clickedRow, clickedCol)
+                                possibleMoves = getPossibleMoves(boardState, clickedRow, clickedCol) // Berechne mögliche Züge
                             } else if (selectedPiece != null) {
                                 val (selectedRow, selectedCol) = selectedPiece!!
                                 val piece = boardState[selectedRow][selectedCol]
@@ -61,6 +66,7 @@ fun ChessBoard() {
                                     fenNotation = calculateFEN(boardState) // FEN-Notation nach dem Zug berechnen
                                 }
                                 selectedPiece = null // Auswahl zurücksetzen
+                                possibleMoves = emptyList() // Mögliche Züge zurücksetzen
                             }
                         }
                     )
@@ -70,30 +76,27 @@ fun ChessBoard() {
     }
 }
 
-
-// Funktion, die das Verschieben der Figur umsetzt
-fun Array<Array<Int>>.movePiece(fromRow: Int, fromCol: Int, toRow: Int, toCol: Int): Array<Array<Int>> {
-    val newBoard = this.map { it.clone() }.toTypedArray()
-    newBoard[toRow][toCol] = newBoard[fromRow][fromCol] // Figur verschieben
-    newBoard[fromRow][fromCol] = 0 // Altes Feld leeren
-    return newBoard
-}
-
 @Composable
 fun ChessTileWithPiece(
     row: Int,
     col: Int,
     pieceResId: Int,
     isSelected: Boolean,
+    isPossibleMove: Boolean,
     onTileClick: (Int, Int) -> Unit
 ) {
     val isLightTile = (row + col) % 2 == 0
-    val backgroundColor = if (isLightTile) Color.LightGray else Color.DarkGray
+    val backgroundColor = when {
+        isPossibleMove -> Color.Red // Möglicher Zug
+        isSelected -> Color.Yellow // Ausgewählte Figur
+        isLightTile -> Color.LightGray
+        else -> Color.DarkGray
+    }
 
     Box(
         modifier = Modifier
             .size(48.dp)
-            .background(color = if (isSelected) Color.Yellow else backgroundColor)
+            .background(color = backgroundColor)
             .clickable { onTileClick(row, col) },
         contentAlignment = Alignment.Center
     ) {
@@ -106,9 +109,30 @@ fun ChessTileWithPiece(
             )
         }
     }
-
 }
 
+
+// Funktion, die die möglichen Züge für eine Figur berechnet
+fun getPossibleMoves(board: Array<Array<Int>>, row: Int, col: Int): List<Pair<Int, Int>> {
+    val piece = board[row][col]
+    val possibleMoves = mutableListOf<Pair<Int, Int>>()
+
+    for (toRow in 0..7) {
+        for (toCol in 0..7) {
+            if (isValidMove(board, row, col, toRow, toCol, piece)) {
+                possibleMoves.add(Pair(toRow, toCol))
+            }
+        }
+    }
+    return possibleMoves
+}
+// Funktion, die das Verschieben der Figur umsetzt
+fun Array<Array<Int>>.movePiece(fromRow: Int, fromCol: Int, toRow: Int, toCol: Int): Array<Array<Int>> {
+    val newBoard = this.map { it.clone() }.toTypedArray()
+    newBoard[toRow][toCol] = newBoard[fromRow][fromCol] // Figur verschieben
+    newBoard[fromRow][fromCol] = 0 // Altes Feld leeren
+    return newBoard
+}
 
 
 
@@ -219,6 +243,7 @@ fun isValidBishopMove(
     var row = fromRow + rowDirection
     var col = fromCol + colDirection
     while (row != toRow && col != toCol) {
+        if (row !in 0..7 || col !in 0..7) return false
         if (board[row][col] != 0) return false
         row += rowDirection
         col += colDirection
