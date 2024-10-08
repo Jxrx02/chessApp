@@ -155,9 +155,7 @@ fun isValidMove(
 
     // Verhindere das Bewegen auf ein Feld mit einer eigenen Figur
     val targetPiece = board[toRow][toCol]
-    if (targetPiece != 0 && (targetPiece in R.drawable.white_pawn..R.drawable.white_king) == isWhite) {
-        return false
-    }
+
 
     return when (piece) {
         R.drawable.white_pawn, R.drawable.black_pawn -> isValidPawnMove(board, fromRow, fromCol, toRow, toCol, isWhite)
