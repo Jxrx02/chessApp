@@ -3,9 +3,18 @@ package com.example.chess
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -14,16 +23,52 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import kotlin.math.abs
 
-// Beispiel-Schachbrett mit Bild-Ressourcen
+// Schachbrett mit Bild-Ressourcen
 val initialBoardWithImages = arrayOf(
-    arrayOf(R.drawable.black_rook, R.drawable.black_knight, R.drawable.black_bishop, R.drawable.black_queen, R.drawable.black_king, R.drawable.black_bishop, R.drawable.black_knight, R.drawable.black_rook),
-    arrayOf(R.drawable.black_pawn, R.drawable.black_pawn, R.drawable.black_pawn, R.drawable.black_pawn, R.drawable.black_pawn, R.drawable.black_pawn, R.drawable.black_pawn, R.drawable.black_pawn),
+    arrayOf(
+        R.drawable.black_rook,
+        R.drawable.black_knight,
+        R.drawable.black_bishop,
+        R.drawable.black_queen,
+        R.drawable.black_king,
+        R.drawable.black_bishop,
+        R.drawable.black_knight,
+        R.drawable.black_rook
+    ),
+    arrayOf(
+        R.drawable.black_pawn,
+        R.drawable.black_pawn,
+        R.drawable.black_pawn,
+        R.drawable.black_pawn,
+        R.drawable.black_pawn,
+        R.drawable.black_pawn,
+        R.drawable.black_pawn,
+        R.drawable.black_pawn
+    ),
     arrayOf(0, 0, 0, 0, 0, 0, 0, 0),
     arrayOf(0, 0, 0, 0, 0, 0, 0, 0),
     arrayOf(0, 0, 0, 0, 0, 0, 0, 0),
     arrayOf(0, 0, 0, 0, 0, 0, 0, 0),
-    arrayOf(R.drawable.white_pawn, R.drawable.white_pawn, R.drawable.white_pawn, R.drawable.white_pawn, R.drawable.white_pawn, R.drawable.white_pawn, R.drawable.white_pawn, R.drawable.white_pawn),
-    arrayOf(R.drawable.white_rook, R.drawable.white_knight, R.drawable.white_bishop, R.drawable.white_queen, R.drawable.white_king, R.drawable.white_bishop, R.drawable.white_knight, R.drawable.white_rook)
+    arrayOf(
+        R.drawable.white_pawn,
+        R.drawable.white_pawn,
+        R.drawable.white_pawn,
+        R.drawable.white_pawn,
+        R.drawable.white_pawn,
+        R.drawable.white_pawn,
+        R.drawable.white_pawn,
+        R.drawable.white_pawn
+    ),
+    arrayOf(
+        R.drawable.white_rook,
+        R.drawable.white_knight,
+        R.drawable.white_bishop,
+        R.drawable.white_queen,
+        R.drawable.white_king,
+        R.drawable.white_bishop,
+        R.drawable.white_knight,
+        R.drawable.white_rook
+    )
 )
 
 @Composable
@@ -56,15 +101,33 @@ fun ChessBoard() {
                             if (selectedPiece == null && boardState[clickedRow][clickedCol] != 0) {
                                 // Wenn ein Feld mit einer Figur angeklickt wird, wird sie ausgewählt
                                 selectedPiece = Pair(clickedRow, clickedCol)
-                                possibleMoves = getPossibleMoves(boardState, clickedRow, clickedCol) // Berechne mögliche Züge
+                                possibleMoves = getPossibleMoves(
+                                    boardState,
+                                    clickedRow,
+                                    clickedCol
+                                ) // Berechne mögliche Züge
                             } else if (selectedPiece != null) {
                                 val (selectedRow, selectedCol) = selectedPiece!!
                                 val piece = boardState[selectedRow][selectedCol]
 
-                                if (isValidMove(boardState, selectedRow, selectedCol, clickedRow, clickedCol, piece)) {
+                                if (isValidMove(
+                                        boardState,
+                                        selectedRow,
+                                        selectedCol,
+                                        clickedRow,
+                                        clickedCol,
+                                        piece
+                                    )
+                                ) {
                                     // Aktualisiere das Schachbrett und FEN nach dem Zug
-                                    boardState = boardState.movePiece(selectedRow, selectedCol, clickedRow, clickedCol)
-                                    fenNotation = calculateFEN(boardState) // FEN-Notation nach dem Zug berechnen
+                                    boardState = boardState.movePiece(
+                                        selectedRow,
+                                        selectedCol,
+                                        clickedRow,
+                                        clickedCol
+                                    )
+                                    fenNotation =
+                                        calculateFEN(boardState) // FEN-Notation nach dem Zug berechnen
                                 }
                                 selectedPiece = null // Auswahl zurücksetzen
                                 possibleMoves = emptyList() // Mögliche Züge zurücksetzen
@@ -127,16 +190,19 @@ fun getPossibleMoves(board: Array<Array<Int>>, row: Int, col: Int): List<Pair<In
     }
     return possibleMoves
 }
+
 // Funktion, die das Verschieben der Figur umsetzt
-fun Array<Array<Int>>.movePiece(fromRow: Int, fromCol: Int, toRow: Int, toCol: Int): Array<Array<Int>> {
+fun Array<Array<Int>>.movePiece(
+    fromRow: Int,
+    fromCol: Int,
+    toRow: Int,
+    toCol: Int
+): Array<Array<Int>> {
     val newBoard = this.map { it.clone() }.toTypedArray()
     newBoard[toRow][toCol] = newBoard[fromRow][fromCol] // Figur verschieben
     newBoard[fromRow][fromCol] = 0 // Altes Feld leeren
     return newBoard
 }
-
-
-
 
 
 fun isValidMove(
@@ -148,9 +214,11 @@ fun isValidMove(
         R.drawable.white_pawn, R.drawable.white_rook,
         R.drawable.white_knight, R.drawable.white_bishop,
         R.drawable.white_queen, R.drawable.white_king -> true
+
         R.drawable.black_pawn, R.drawable.black_rook,
         R.drawable.black_knight, R.drawable.black_bishop,
         R.drawable.black_queen, R.drawable.black_king -> false
+
         else -> return false // Ungültige Figur
     }
 
@@ -161,21 +229,64 @@ fun isValidMove(
             R.drawable.white_pawn, R.drawable.white_rook,
             R.drawable.white_knight, R.drawable.white_bishop,
             R.drawable.white_queen, R.drawable.white_king -> true
+
             R.drawable.black_pawn, R.drawable.black_rook,
             R.drawable.black_knight, R.drawable.black_bishop,
             R.drawable.black_queen, R.drawable.black_king -> false
+
             else -> return false
         }
         if (isWhite == targetIsWhite) return false // Wenn das Zielfeld eine eigene Figur hat, ist der Zug ungültig
     }
 
     return when (piece) {
-        R.drawable.white_pawn, R.drawable.black_pawn -> isValidPawnMove(board, fromRow, fromCol, toRow, toCol, isWhite)
-        R.drawable.white_rook, R.drawable.black_rook -> isValidRookMove(board, fromRow, fromCol, toRow, toCol)
-        R.drawable.white_knight, R.drawable.black_knight -> isValidKnightMove(fromRow, fromCol, toRow, toCol)
-        R.drawable.white_bishop, R.drawable.black_bishop -> isValidBishopMove(board, fromRow, fromCol, toRow, toCol)
-        R.drawable.white_queen, R.drawable.black_queen -> isValidQueenMove(board, fromRow, fromCol, toRow, toCol)
-        R.drawable.white_king, R.drawable.black_king -> isValidKingMove(fromRow, fromCol, toRow, toCol)
+        R.drawable.white_pawn, R.drawable.black_pawn -> isValidPawnMove(
+            board,
+            fromRow,
+            fromCol,
+            toRow,
+            toCol,
+            isWhite
+        )
+
+        R.drawable.white_rook, R.drawable.black_rook -> isValidRookMove(
+            board,
+            fromRow,
+            fromCol,
+            toRow,
+            toCol
+        )
+
+        R.drawable.white_knight, R.drawable.black_knight -> isValidKnightMove(
+            fromRow,
+            fromCol,
+            toRow,
+            toCol
+        )
+
+        R.drawable.white_bishop, R.drawable.black_bishop -> isValidBishopMove(
+            board,
+            fromRow,
+            fromCol,
+            toRow,
+            toCol
+        )
+
+        R.drawable.white_queen, R.drawable.black_queen -> isValidQueenMove(
+            board,
+            fromRow,
+            fromCol,
+            toRow,
+            toCol
+        )
+
+        R.drawable.white_king, R.drawable.black_king -> isValidKingMove(
+            fromRow,
+            fromCol,
+            toRow,
+            toCol
+        )
+
         else -> false
     }
 }
@@ -187,8 +298,10 @@ fun isValidPawnMove(
     toRow: Int, toCol: Int,
     isWhite: Boolean
 ): Boolean {
-    val direction = if (isWhite) -1 else 1 // Weiße Bauern bewegen sich nach oben (-1), schwarze nach unten (+1)
-    val startRow = if (isWhite) 6 else 1 // Weiße Bauern starten in der Reihe 6, schwarze in der Reihe 1
+    val direction =
+        if (isWhite) -1 else 1 // Weiße Bauern bewegen sich nach oben (-1), schwarze nach unten (+1)
+    val startRow =
+        if (isWhite) 6 else 1 // Weiße Bauern starten in der Reihe 6, schwarze in der Reihe 1
 
     // Normale Bewegung nach vorne
     if (fromCol == toCol && board[toRow][toCol] == 0) {
@@ -268,7 +381,13 @@ fun isValidQueenMove(
     fromRow: Int, fromCol: Int,
     toRow: Int, toCol: Int
 ): Boolean {
-    return isValidRookMove(board, fromRow, fromCol, toRow, toCol) || isValidBishopMove(board, fromRow, fromCol, toRow, toCol)
+    return isValidRookMove(board, fromRow, fromCol, toRow, toCol) || isValidBishopMove(
+        board,
+        fromRow,
+        fromCol,
+        toRow,
+        toCol
+    )
 }
 
 // Beispiel: Überprüfe König-Zug
