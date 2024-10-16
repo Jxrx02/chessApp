@@ -76,16 +76,30 @@ fun ChessBoard() {
     var boardState by remember { mutableStateOf(initialBoardWithImages) }
     var selectedPiece by remember { mutableStateOf<Pair<Int, Int>?>(null) }
     var possibleMoves by remember { mutableStateOf<List<Pair<Int, Int>>>(emptyList()) }
-    var fenNotation by remember { mutableStateOf(calculateFEN(boardState)) } // FEN wird basierend auf dem aktuellen Zustand berechnet
+    var currentPlayer by remember { mutableStateOf(true) } // true = Weiß, false = Schwarz
+    var halfMoveClock by remember { mutableStateOf(0) }  // Halbzüge seit dem letzten Schlagen oder Bauernzug
+    var fullMoveNumber by remember { mutableStateOf(1) } // Zähler für volle Züge
+
+    // FEN-Notation initialisieren
+    var fenNotation by remember {
+        mutableStateOf(
+            calculateFEN(
+                boardState,
+                currentPlayer,
+                halfMoveClock,
+                fullMoveNumber
+            )
+        )
+    }
 
     Column {
-        // FEN-Notation wird im Textfeld angezeigt
+        // FEN-Notation anzeigen
         Text(
             text = "FEN: $fenNotation",
             modifier = Modifier.padding(16.dp)
         )
 
-        // Schachbrett mit Feldern
+        // Schachbrett anzeigen
         for (row in 0..7) {
             Row {
                 for (col in 0..7) {
@@ -98,17 +112,19 @@ fun ChessBoard() {
                         isSelected = selectedPiece == Pair(row, col),
                         isPossibleMove = isPossibleMove,
                         onTileClick = { clickedRow, clickedCol ->
-                            if (selectedPiece == null && boardState[clickedRow][clickedCol] != 0) {
-                                // Wenn ein Feld mit einer Figur angeklickt wird, wird sie ausgewählt
+                            val piece = boardState[clickedRow][clickedCol]
+
+                            if (selectedPiece == null && piece != 0 && isCorrectPlayer(
+                                    piece,
+                                    currentPlayer
+                                )
+                            ) {
+                                // Figur auswählen
                                 selectedPiece = Pair(clickedRow, clickedCol)
-                                possibleMoves = getPossibleMoves(
-                                    boardState,
-                                    clickedRow,
-                                    clickedCol
-                                ) // Berechne mögliche Züge
+                                possibleMoves = getPossibleMoves(boardState, clickedRow, clickedCol)
                             } else if (selectedPiece != null) {
                                 val (selectedRow, selectedCol) = selectedPiece!!
-                                val piece = boardState[selectedRow][selectedCol]
+                                val selectedPieceType = boardState[selectedRow][selectedCol]
 
                                 if (isValidMove(
                                         boardState,
@@ -116,29 +132,85 @@ fun ChessBoard() {
                                         selectedCol,
                                         clickedRow,
                                         clickedCol,
-                                        piece
+                                        selectedPieceType
                                     )
                                 ) {
-                                    // Aktualisiere das Schachbrett und FEN nach dem Zug
+                                    // Zug ausführen
                                     boardState = boardState.movePiece(
                                         selectedRow,
                                         selectedCol,
                                         clickedRow,
                                         clickedCol
                                     )
-                                    fenNotation =
-                                        calculateFEN(boardState) // FEN-Notation nach dem Zug berechnen
+
+                                    // Halbzugzähler und Vollzugzähler aktualisieren
+                                    if (selectedPieceType == R.drawable.white_pawn || selectedPieceType == R.drawable.black_pawn || boardState[clickedRow][clickedCol] != 0) {
+                                        halfMoveClock =
+                                            0 // Setze Halbzugzähler zurück, wenn ein Bauer gezogen oder eine Figur geschlagen wurde
+                                    } else {
+                                        halfMoveClock++
+                                    }
+
+                                    if (!currentPlayer) {
+                                        fullMoveNumber++ // Voller Zug abgeschlossen, wenn Schwarz gezogen hat
+                                    }
+
+                                    // Spieler wechseln
+                                    currentPlayer = !currentPlayer
+
+                                    // FEN-Notation aktualisieren
+                                    fenNotation = calculateFEN(
+                                        boardState,
+                                        currentPlayer,
+                                        halfMoveClock,
+                                        fullMoveNumber
+                                    )
                                 }
-                                selectedPiece = null // Auswahl zurücksetzen
-                                possibleMoves = emptyList() // Mögliche Züge zurücksetzen
+
+                                // Auswahl zurücksetzen
+                                selectedPiece = null
+                                possibleMoves = emptyList()
                             }
                         }
                     )
                 }
             }
         }
+
+        // Zeige den aktuellen Spieler an
+        Text(
+            text = if (currentPlayer) "Weiß am Zug" else "Schwarz am Zug",
+            modifier = Modifier.padding(16.dp)
+        )
     }
 }
+
+
+// Hilfsfunktion, um zu prüfen, ob der aktuelle Spieler die Figur bewegen darf
+fun isCorrectPlayer(piece: Int, currentPlayer: Boolean): Boolean {
+    return if (currentPlayer) {
+        // Weißer Spieler, prüfe ob die Figur weiß ist
+        piece in listOf(
+            R.drawable.white_pawn,
+            R.drawable.white_rook,
+            R.drawable.white_knight,
+            R.drawable.white_bishop,
+            R.drawable.white_queen,
+            R.drawable.white_king
+        )
+    } else {
+        // Schwarzer Spieler, prüfe ob die Figur schwarz ist
+        piece in listOf(
+            R.drawable.black_pawn,
+            R.drawable.black_rook,
+            R.drawable.black_knight,
+            R.drawable.black_bishop,
+            R.drawable.black_queen,
+            R.drawable.black_king
+        )
+    }
+}
+
 
 @Composable
 fun ChessTileWithPiece(
@@ -398,7 +470,12 @@ fun isValidKingMove(fromRow: Int, fromCol: Int, toRow: Int, toCol: Int): Boolean
 }
 
 
-fun calculateFEN(board: Array<Array<Int>>): String {
+fun calculateFEN(
+    board: Array<Array<Int>>,
+    currentPlayer: Boolean,
+    halfMoveClock: Int,
+    fullMoveNumber: Int
+): String {
     val pieceMap = mapOf(
         R.drawable.white_pawn to "P",
         R.drawable.white_rook to "R",
@@ -416,6 +493,7 @@ fun calculateFEN(board: Array<Array<Int>>): String {
 
     var fen = ""
 
+    // Iteriere über jede Reihe des Schachbretts
     for (row in board) {
         var emptyCount = 0
 
@@ -440,7 +518,15 @@ fun calculateFEN(board: Array<Array<Int>>): String {
 
     fen = fen.dropLast(1) // Entferne das letzte "/"
 
-    fen += " w - - 0 1" // Standardmäßig "weiß am Zug", keine Rochaderechte, keine En passant-Möglichkeit, kein Zugzähler
+    // Spieleranzeige (w = Weiß, b = Schwarz)
+    fen += if (currentPlayer) " w " else " b "
+
+    // Rochaderechte und En passant sind momentan auf Standard gesetzt
+    fen += "- - "
+
+    // Halbzugzähler und Zugzähler
+    fen += "$halfMoveClock $fullMoveNumber"
 
     return fen
 }
+
