@@ -46,7 +46,7 @@ fun MainView(viewModel: MainViewModel, navController: NavController) {
             verticalArrangement = Arrangement.Center
         ) {
             InputSection(puzzleText = viewModel.puzzleText, puzzles = puzzles, onInsert = {
-                viewModel.insert(puzzle = Puzzle(0, "20", 440, 0, "e4", ""))
+                viewModel.insert(puzzle = Puzzle(0, viewModel.puzzleText, 440, 0, "e4", ""))
             },
                 changeNoteText = {
                     viewModel.puzzleText = it
@@ -88,7 +88,7 @@ fun InputSection(
             modifier = Modifier.fillMaxWidth()
         )
         Button(onClick = { onInsert() }, modifier = Modifier.padding(top = 10.dp)) {
-            Text("Neue Notiz hinzufügen")
+            Text("Nach Puzzle suchen")
         }
 
     }
@@ -96,7 +96,7 @@ fun InputSection(
         puzzles.isNotEmpty()
     ) {
         Button(onClick = { onDeleteAll(puzzles) }, modifier = Modifier.padding(top = 10.dp)) {
-            Text("Alle Notizen löschen")
+            Text("Alle gespeicherten Puzzles löschen")
         }
 
     }
