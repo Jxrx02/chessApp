@@ -11,7 +11,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -79,29 +81,32 @@ val initialBoardWithImages = arrayOf(
 @Composable
 fun ChessBoardView(viewModel: MainViewModel, navController: NavController) {
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        // Zurück-Button
-        OutlinedButton(
-            onClick = { navController.popBackStack() },
-            modifier = Modifier.padding(bottom = 8.dp)
+    Scaffold(topBar = { TopAppBar(title = { Text("Puzzle") }) }) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+
         ) {
-            Text("Zurück")
+            // Zurück-Button
+            OutlinedButton(
+                onClick = { navController.popBackStack() },
+                modifier = Modifier.padding(bottom = 8.dp)
+            ) {
+                Text("Zurück")
+            }
+
+            // Dein Puzzle-Inhalt
+            val puzzle = viewModel.selectedPuzzle
+            if (puzzle != null) {
+                Text(text = "Puzzle: ${puzzle.toString()}")
+            } else {
+                Text(text = "Kein Puzzle ausgewählt")
+            }
+
+            ChessBoard()
+
         }
-
-        // Dein Puzzle-Inhalt
-        val puzzle = viewModel.selectedPuzzle
-        if (puzzle != null) {
-            Text(text = "Puzzle: ${puzzle.toString()}")
-        } else {
-            Text(text = "Kein Puzzle ausgewählt")
-        }
-
-        ChessBoard()
-
     }
 }
 
