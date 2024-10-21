@@ -14,6 +14,7 @@ import kotlinx.coroutines.launch
 class MainViewModel : ViewModel() {
     private lateinit var repository: PuzzleRepository
 
+    var selectedPuzzle: Puzzle? by mutableStateOf(null)
     var puzzleText by mutableStateOf("")
     lateinit var puzzles: Flow<List<Puzzle>>
 

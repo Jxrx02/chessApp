@@ -4,14 +4,18 @@ import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -21,20 +25,25 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
+import com.example.chess.R
 import com.example.chess.database.Puzzle
-
-//TODO: Chessboard hier in die Klasse reinmachen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainView(viewModel: MainViewModel) {
+fun MainView(viewModel: MainViewModel, navController: NavController) {
     val puzzles by viewModel.puzzles.collectAsState(initial = emptyList())
 
-    Scaffold(topBar = { TopAppBar(title = { Text("Puzzle") }) }) { padding ->
+    Scaffold(topBar = { TopAppBar(title = { Text("Puzzle") }) }) { innerPadding ->
         Column(
             modifier = Modifier
-                .padding(padding),
+                .padding(innerPadding)
+                .fillMaxHeight(),
+            verticalArrangement = Arrangement.Center
         ) {
             InputSection(puzzleText = viewModel.puzzleText, puzzles = puzzles, onInsert = {
                 viewModel.insert(puzzle = Puzzle(0, "20", 440, 0, "e4", ""))
@@ -48,9 +57,15 @@ fun MainView(viewModel: MainViewModel) {
                     }
                 })
 
-            NoteList(puzzles = puzzles, onDeleteNote = {
-                viewModel.delete(it)
-            })
+            NoteList(puzzles = puzzles,
+                onClickPuzzle = {
+                    Log.i("Puzzle", "Auf Item ${it} wurde geklickt")
+                    viewModel.selectedPuzzle = it // Puzzle im ViewModel speichern
+                    navController.navigate("ChessBoardView")
+                },
+                onDeletePuzzle = {
+                    viewModel.delete(it)
+                })
         }
 
     }
@@ -89,25 +104,52 @@ fun InputSection(
 }
 
 @Composable
-fun NoteList(puzzles: List<Puzzle>, onDeleteNote: (Puzzle) -> (Unit)) {
+fun NoteList(
+    puzzles: List<Puzzle>,
+    onClickPuzzle: (Puzzle) -> (Unit),
+    onDeletePuzzle: (Puzzle) -> (Unit),
+) {
     LazyColumn {
-        items(puzzles.size) { puzzle ->
+        items(puzzles.size) { index ->
+            val puzzle = puzzles[index]
+
             Row(
                 modifier = Modifier
+                    .clip(RoundedCornerShape(10.dp)) // Abgerundete Ecken
+                    .background(MaterialTheme.colorScheme.primary) // Hintergrundfarbe
                     .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.onPrimary) // Hintergrundfarbe
                     .padding(16.dp) // Innenabstand
                     .padding(bottom = 5.dp) // Abstand zwischen den Zeilen
                     .clickable {
-                        Log.i("Puzzle", "Auf Item ${puzzle + 1} wurde geklickt")
-                        onDeleteNote(puzzles[puzzle])
+                        onClickPuzzle(puzzle)
                     }
             ) {
-                Text(
-                    text = puzzle.toString(),
-                    modifier = Modifier.weight(1f) // Text nimmt den verfügbaren Platz ein
-                )
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(end = 8.dp) // Abstand innerhalb der Spalte
+                ) {
+                    Text(
+                        text = "Puzzle ${index + 1}",
+                        color = MaterialTheme.colorScheme.onPrimary,
+                    )
+                    Text(
+                        text = puzzle.toString(),
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                OutlinedButton(
+                    modifier = Modifier.padding(top = 2.dp),
+                    onClick = { onDeletePuzzle(puzzle) }
+                ) {
+                    Text(
+                        stringResource(R.string.delete),
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                }
             }
         }
     }
 }
+

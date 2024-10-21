@@ -7,6 +7,9 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.example.chess.database.PuzzleDatabase
 import com.example.chess.ui.theme.ChessTheme
 import com.example.chess.view.main.MainView
@@ -20,7 +23,7 @@ class MainActivity : ComponentActivity() {
             ChessTheme {
 
                 //ChessBoard()
-                BriefNote()
+                ChessApp()
 
             }
 
@@ -29,8 +32,17 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun BriefNote() {
+fun ChessApp() {
     val viewModel = viewModel<MainViewModel>()
     viewModel.initialize(PuzzleDatabase.getInstance(LocalContext.current))
-    MainView(viewModel = viewModel)
+
+    val navController = rememberNavController()
+    NavHost(navController = navController, startDestination = "mainView") {
+        composable(route = "mainView") {
+            MainView(viewModel = viewModel, navController = navController)
+        }
+        composable(route = "chessBoardView") {
+            ChessBoardView(viewModel = viewModel, navController = navController)
+        }
+    }
 }
