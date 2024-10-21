@@ -21,12 +21,8 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             ChessTheme {
-
-                //ChessBoard()
                 ChessApp()
-
             }
-
         }
     }
 }

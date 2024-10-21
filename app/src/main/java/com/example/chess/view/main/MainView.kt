@@ -46,7 +46,16 @@ fun MainView(viewModel: MainViewModel, navController: NavController) {
             verticalArrangement = Arrangement.Center
         ) {
             InputSection(puzzleText = viewModel.puzzleText, puzzles = puzzles, onInsert = {
-                viewModel.insert(puzzle = Puzzle(0, viewModel.puzzleText, 440, 0, "e4", ""))
+                viewModel.insert(
+                    puzzle = Puzzle(
+                        0,
+                        viewModel.puzzleText,
+                        440,
+                        0,
+                        "e4 c5",
+                        ""
+                    )
+                )
             },
                 changeNoteText = {
                     viewModel.puzzleText = it

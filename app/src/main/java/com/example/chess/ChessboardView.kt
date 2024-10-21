@@ -15,6 +15,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -26,6 +27,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.chess.database.Puzzle
 import com.example.chess.view.main.MainViewModel
 import kotlin.math.abs
 
@@ -106,7 +108,9 @@ fun ChessBoardView(viewModel: MainViewModel, navController: NavController) {
                 Text(text = "Kein Puzzle ausgewählt")
             }
 
-            ChessBoard()
+            if (puzzle != null) {
+                ChessBoard(puzzle = puzzle)
+            }
 
         }
     }
@@ -114,8 +118,9 @@ fun ChessBoardView(viewModel: MainViewModel, navController: NavController) {
 
 
 @Composable
-fun ChessBoard() {
-    var boardState by remember { mutableStateOf(initialBoardWithImages) }
+fun ChessBoard(puzzle: Puzzle) {
+    var boardState: Array<Array<Int>>
+    boardState = initialBoardWithImages
     var selectedPiece by remember { mutableStateOf<Pair<Int, Int>?>(null) }
     var possibleMoves by remember { mutableStateOf<List<Pair<Int, Int>>>(emptyList()) }
     var currentPlayer by remember { mutableStateOf(true) } // true = Weiß, false = Schwarz
@@ -133,6 +138,11 @@ fun ChessBoard() {
             )
         )
     }
+
+    // PGN in Moves umwandeln
+    val pgnMoves = parsePgnToMoves(puzzle.pgn)
+
+
 
     Column {
         // FEN-Notation anzeigen
@@ -215,6 +225,12 @@ fun ChessBoard() {
                             }
                         }
                     )
+
+                    // Züge nacheinander ausführen
+                    LaunchedEffect(pgnMoves) {
+                        boardState = executeMovesFromPgn(pgnMoves, boardState, currentPlayer)
+                    }
+
                 }
             }
         }
@@ -224,6 +240,7 @@ fun ChessBoard() {
             text = if (currentPlayer) "Weiß am Zug" else "Schwarz am Zug",
             modifier = Modifier.padding(16.dp)
         )
+
     }
 }
 
@@ -570,5 +587,96 @@ fun calculateFEN(
     fen += "$halfMoveClock $fullMoveNumber"
 
     return fen
+}
+
+
+fun parsePgnToMoves(pgn: String): List<String> {
+    return pgn.split(" ").filter { it.isNotEmpty() && !it.contains(".") }
+}
+
+fun executeMovesFromPgn(
+    pgnMoves: List<String>,
+    boardState: Array<Array<Int>>,
+    currentPlayer: Boolean
+): Array<Array<Int>> {
+    pgnMoves.forEachIndexed { index, move ->
+        val moveCoords = convertPgnPawnMoveToCoords(move, currentPlayer)
+
+        if (moveCoords != null) {
+            val (from, to) = moveCoords
+            val piece = boardState[from.first][from.second]
+
+            if (isValidMove(boardState, from.first, from.second, to.first, to.second, piece)) {
+                // Führe den Zug aus
+                boardState.movePiece(from.first, from.second, to.first, to.second)
+
+            }
+        }
+
+    }
+    return boardState
+}
+
+fun convertPgnPawnMoveToCoords(
+    move: String,
+    isWhite: Boolean
+): Pair<Pair<Int, Int>, Pair<Int, Int>>? {
+    val fileMap = mapOf(
+        'a' to 0, 'b' to 1, 'c' to 2, 'd' to 3,
+        'e' to 4, 'f' to 5, 'g' to 6, 'h' to 7
+    )
+
+    // Bauernzüge haben nur zwei Zeichen, wie 'e4' oder 'c5'
+    if (move.length == 2) {
+        try {
+            // Das Zielfeld
+            val endFile = fileMap[move[0]] ?: return null // Der Buchstabe des Zielfelds (Spalte)
+            val endRank = 8 - move[1].digitToInt()         // Die Zahl des Zielfelds (Zeile)
+
+            // Der Startpunkt hängt von der Farbe des Spielers ab
+            val startRank =
+                if (isWhite) 2 else 7          // Weiß startet von Reihe 6, Schwarz von Reihe 1
+
+            // Rückgabe des Zugpaars als ((startRow, startCol), (endRow, endCol))
+            return Pair(Pair(startRank, endRank), Pair(endFile, endRank))
+        } catch (e: Exception) {
+            return null
+        }
+    }
+
+
+    if (move.length >= 4) {
+        try {
+            val startFile = fileMap[move[0]] ?: return null
+            val startRank = 8 - move[1].digitToInt()
+            val endFile = fileMap[move[2]] ?: return null
+            val endRank = 8 - move[3].digitToInt()
+
+            return Pair(Pair(startRank, startFile), Pair(endRank, endFile))
+        } catch (e: Exception) {
+            return null
+        }
+    }
+
+    // Zusätzliche Fälle wie Schlagen (Nxe5, Bxf6) können implementiert werden, hier wird das 'x' ignoriert
+    if (move.contains("x") && move.length >= 5) {
+        try {
+            val startFile = fileMap[move[0]] ?: return null
+            val startRank = 8 - move[1].digitToInt()
+            val endFile = fileMap[move[3]] ?: return null
+            val endRank = 8 - move[4].digitToInt()
+
+            return Pair(Pair(startRank, startFile), Pair(endRank, endFile))
+        } catch (e: Exception) {
+            return null
+        }
+    }
+
+    // Rückgabe `null` für nicht unterstützte Fälle
+    return null
+
+
+    // Rückgabe `null`, falls der Zug nicht verarbeitet werden kann
+    return null
 }
 
