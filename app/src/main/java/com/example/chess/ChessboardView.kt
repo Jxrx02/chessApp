@@ -81,21 +81,23 @@ val initialBoardWithImages = arrayOf(
 @Composable
 fun ChessBoardView(viewModel: MainViewModel, navController: NavController) {
 
-    Scaffold(topBar = { TopAppBar(title = { Text("Puzzle") }) }) { innerPadding ->
+    Scaffold(topBar = {
+        TopAppBar(
+            title = { Text("Puzzle - ${viewModel.selectedPuzzle?.puzzleId}") },
+            navigationIcon = {
+                OutlinedButton(
+                    onClick = { navController.popBackStack() },
+                    modifier = Modifier.padding(end = 8.dp) // Optional padding for better spacing
+                ) {
+                    Text("<")
+                }
+            })
+    }) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-
         ) {
-            // Zurück-Button
-            OutlinedButton(
-                onClick = { navController.popBackStack() },
-                modifier = Modifier.padding(bottom = 8.dp)
-            ) {
-                Text("Zurück")
-            }
-
             // Dein Puzzle-Inhalt
             val puzzle = viewModel.selectedPuzzle
             if (puzzle != null) {
