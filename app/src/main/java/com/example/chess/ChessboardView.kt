@@ -1,5 +1,6 @@
 package com.example.chess
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -24,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -119,13 +121,13 @@ fun ChessBoardView(viewModel: MainViewModel, navController: NavController) {
 
 @Composable
 fun ChessBoard(puzzle: Puzzle) {
-    var boardState: Array<Array<Int>>
-    boardState = initialBoardWithImages
+    var boardState by remember { mutableStateOf(initialBoardWithImages) }
     var selectedPiece by remember { mutableStateOf<Pair<Int, Int>?>(null) }
     var possibleMoves by remember { mutableStateOf<List<Pair<Int, Int>>>(emptyList()) }
     var currentPlayer by remember { mutableStateOf(true) } // true = Weiß, false = Schwarz
     var halfMoveClock by remember { mutableStateOf(0) }  // Halbzüge seit dem letzten Schlagen oder Bauernzug
     var fullMoveNumber by remember { mutableStateOf(1) } // Zähler für volle Züge
+    val context = LocalContext.current // Kontext für den Toast
 
     // FEN-Notation initialisieren
     var fenNotation by remember {
@@ -173,6 +175,12 @@ fun ChessBoard(puzzle: Puzzle) {
                             ) {
                                 // Figur auswählen
                                 selectedPiece = Pair(clickedRow, clickedCol)
+                                Toast.makeText(
+                                    context,
+                                    selectedPiece.toString(),
+                                    Toast.LENGTH_SHORT
+                                ).show()
+
                                 possibleMoves = getPossibleMoves(boardState, clickedRow, clickedCol)
                             } else if (selectedPiece != null) {
                                 val (selectedRow, selectedCol) = selectedPiece!!
@@ -228,8 +236,14 @@ fun ChessBoard(puzzle: Puzzle) {
 
                     // Züge nacheinander ausführen
                     LaunchedEffect(pgnMoves) {
-                        boardState = executeMovesFromPgn(pgnMoves, boardState, currentPlayer)
+                        pgnMoves.forEach { move ->
+                            // Führe Zug aus
+                            boardState = executeMovesFromPgn(move, boardState, currentPlayer)
+                            // Spieler wechseln
+                            currentPlayer = !currentPlayer
+                        }
                     }
+
 
                 }
             }
@@ -595,36 +609,37 @@ fun parsePgnToMoves(pgn: String): List<String> {
 }
 
 fun executeMovesFromPgn(
-    pgnMoves: List<String>,
-    boardState: Array<Array<Int>>,
+    move: String,
+    board: Array<Array<Int>>,
     currentPlayer: Boolean
 ): Array<Array<Int>> {
-    pgnMoves.forEachIndexed { index, move ->
-        val moveCoords = convertPgnPawnMoveToCoords(move, currentPlayer)
 
-        if (moveCoords != null) {
-            val (from, to) = moveCoords
-            val piece = boardState[from.first][from.second]
+    val moveCoords = convertPgnPawnMoveToCoords(move, currentPlayer)
 
-            if (isValidMove(boardState, from.first, from.second, to.first, to.second, piece)) {
-                // Führe den Zug aus
-                boardState.movePiece(from.first, from.second, to.first, to.second)
+    if (moveCoords != null) {
+        val (from, to) = moveCoords
 
-            }
+        val piece = board[from.first][from.second]
+        println(
+            move + " " + "piece: " + piece + " " + from.first + "|" + from.second + " " + to.first + "|" + to.second
+        )
+
+        if (isValidMove(board, from.first, from.second, to.first, to.second, piece)) {
+            // Führe den Zug aus
+            return board.movePiece(from.first, from.second, to.first, to.second)
+
         }
-
     }
-    return boardState
+    return board
 }
 
 fun convertPgnPawnMoveToCoords(
     move: String,
     isWhite: Boolean
 ): Pair<Pair<Int, Int>, Pair<Int, Int>>? {
-    val fileMap = mapOf(
-        'a' to 0, 'b' to 1, 'c' to 2, 'd' to 3,
-        'e' to 4, 'f' to 5, 'g' to 6, 'h' to 7
-    )
+    val fileMap =
+        mapOf('a' to 0, 'b' to 1, 'c' to 2, 'd' to 3, 'e' to 4, 'f' to 5, 'g' to 6, 'h' to 7)
+
 
     // Bauernzüge haben nur zwei Zeichen, wie 'e4' oder 'c5'
     if (move.length == 2) {
@@ -635,7 +650,7 @@ fun convertPgnPawnMoveToCoords(
 
             // Der Startpunkt hängt von der Farbe des Spielers ab
             val startRank =
-                if (isWhite) 2 else 7          // Weiß startet von Reihe 6, Schwarz von Reihe 1
+                if (isWhite) 6 else 1          // Weiß startet von Reihe 6, Schwarz von Reihe 1
 
             // Rückgabe des Zugpaars als ((startRow, startCol), (endRow, endCol))
             return Pair(Pair(startRank, endRank), Pair(endFile, endRank))
@@ -673,10 +688,6 @@ fun convertPgnPawnMoveToCoords(
     }
 
     // Rückgabe `null` für nicht unterstützte Fälle
-    return null
-
-
-    // Rückgabe `null`, falls der Zug nicht verarbeitet werden kann
     return null
 }
 
