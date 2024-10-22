@@ -238,7 +238,7 @@ fun ChessBoard(puzzle: Puzzle) {
                     LaunchedEffect(pgnMoves) {
                         pgnMoves.forEach { move ->
                             // Führe Zug aus
-                            boardState = executeMovesFromPgn(move, boardState, currentPlayer)
+                            boardState = executeMoveFromPgn(move, boardState, currentPlayer)
                             // Spieler wechseln
                             currentPlayer = !currentPlayer
                         }
@@ -608,13 +608,13 @@ fun parsePgnToMoves(pgn: String): List<String> {
     return pgn.split(" ").filter { it.isNotEmpty() && !it.contains(".") }
 }
 
-fun executeMovesFromPgn(
+fun executeMoveFromPgn(
     move: String,
     board: Array<Array<Int>>,
     currentPlayer: Boolean
 ): Array<Array<Int>> {
 
-    val moveCoords = convertPgnPawnMoveToCoords(move, currentPlayer)
+    val moveCoords = convertPgnMoveToCoords(move, currentPlayer, board)
 
     if (moveCoords != null) {
         val (from, to) = moveCoords
@@ -633,13 +633,71 @@ fun executeMovesFromPgn(
     return board
 }
 
+fun convertPgnMoveToCoords(
+    move: String,
+    isWhite: Boolean,
+    board: Array<Array<Int>>
+): Pair<Pair<Int, Int>, Pair<Int, Int>>? {
+    val fileMap =
+        mapOf('a' to 0, 'b' to 1, 'c' to 2, 'd' to 3, 'e' to 4, 'f' to 5, 'g' to 6, 'h' to 7)
+
+    // Handle pawn moves (no piece letter, e.g., 'e4')
+    if (move.length == 2) {
+        return convertPgnPawnMoveToCoords(move, isWhite)
+    }
+
+    // Handle piece moves like 'Nf3', 'Qd4'
+    if (move.length >= 3) {
+        val pieceType = move[0]
+        val endFile = fileMap[move[move.length - 2]] ?: return null
+        val endRank = 8 - move[move.length - 1].digitToInt()
+
+        return findPieceMove(pieceType, endRank, endFile, isWhite, board)
+    }
+    return null
+}
+
+fun findPieceMove(
+    pieceType: Char,
+    endRank: Int,
+    endFile: Int,
+    isWhite: Boolean,
+    board: Array<Array<Int>>
+): Pair<Pair<Int, Int>, Pair<Int, Int>>? {
+    // Search for the piece on the board that can move to (endRank, endFile)
+    for (i in 0..7) {
+        for (j in 0..7) {
+            val currentPiece = board[i][j]
+            if (isPieceOfType(pieceType, currentPiece, isWhite)) {
+                // Check if this piece can move to the target square
+                if (isValidMove(board, i, j, endRank, endFile, currentPiece)) {
+                    return Pair(Pair(i, j), Pair(endRank, endFile))
+                }
+            }
+        }
+    }
+    return null
+}
+
+fun isPieceOfType(pieceType: Char, currentPiece: Int, isWhite: Boolean): Boolean {
+    // Define piece types
+    return when (pieceType) {
+        'N' -> currentPiece == if (isWhite) R.drawable.white_knight else R.drawable.black_knight
+        'B' -> currentPiece == if (isWhite) R.drawable.white_bishop else R.drawable.black_bishop
+        'R' -> currentPiece == if (isWhite) R.drawable.white_rook else R.drawable.black_rook
+        'Q' -> currentPiece == if (isWhite) R.drawable.white_queen else R.drawable.black_queen
+        'K' -> currentPiece == if (isWhite) R.drawable.white_king else R.drawable.black_king
+        else -> false // Unsupported piece
+    }
+}
+
+
 fun convertPgnPawnMoveToCoords(
     move: String,
     isWhite: Boolean
 ): Pair<Pair<Int, Int>, Pair<Int, Int>>? {
     val fileMap =
         mapOf('a' to 0, 'b' to 1, 'c' to 2, 'd' to 3, 'e' to 4, 'f' to 5, 'g' to 6, 'h' to 7)
-
 
     // Bauernzüge haben nur zwei Zeichen, wie 'e4' oder 'c5'
     if (move.length == 2) {
@@ -658,36 +716,6 @@ fun convertPgnPawnMoveToCoords(
             return null
         }
     }
-
-
-    if (move.length >= 4) {
-        try {
-            val startFile = fileMap[move[0]] ?: return null
-            val startRank = 8 - move[1].digitToInt()
-            val endFile = fileMap[move[2]] ?: return null
-            val endRank = 8 - move[3].digitToInt()
-
-            return Pair(Pair(startRank, startFile), Pair(endRank, endFile))
-        } catch (e: Exception) {
-            return null
-        }
-    }
-
-    // Zusätzliche Fälle wie Schlagen (Nxe5, Bxf6) können implementiert werden, hier wird das 'x' ignoriert
-    if (move.contains("x") && move.length >= 5) {
-        try {
-            val startFile = fileMap[move[0]] ?: return null
-            val startRank = 8 - move[1].digitToInt()
-            val endFile = fileMap[move[3]] ?: return null
-            val endRank = 8 - move[4].digitToInt()
-
-            return Pair(Pair(startRank, startFile), Pair(endRank, endFile))
-        } catch (e: Exception) {
-            return null
-        }
-    }
-
-    // Rückgabe `null` für nicht unterstützte Fälle
     return null
 }
 
