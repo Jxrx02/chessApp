@@ -16,7 +16,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -36,14 +35,14 @@ import kotlin.math.abs
 // Schachbrett mit Bild-Ressourcen
 val initialBoardWithImages = arrayOf(
     arrayOf(
-        R.drawable.black_rook,
-        R.drawable.black_knight,
-        R.drawable.black_bishop,
+        R.drawable.black_rook_l,
+        R.drawable.black_knight_l,
+        R.drawable.black_bishop_l,
         R.drawable.black_queen,
         R.drawable.black_king,
-        R.drawable.black_bishop,
-        R.drawable.black_knight,
-        R.drawable.black_rook
+        R.drawable.black_bishop_r,
+        R.drawable.black_knight_r,
+        R.drawable.black_rook_r
     ),
     arrayOf(
         R.drawable.black_pawn,
@@ -70,21 +69,22 @@ val initialBoardWithImages = arrayOf(
         R.drawable.white_pawn
     ),
     arrayOf(
-        R.drawable.white_rook,
-        R.drawable.white_knight,
-        R.drawable.white_bishop,
+        R.drawable.white_rook_l,
+        R.drawable.white_knight_l,
+        R.drawable.white_bishop_l,
         R.drawable.white_queen,
         R.drawable.white_king,
-        R.drawable.white_bishop,
-        R.drawable.white_knight,
-        R.drawable.white_rook
+        R.drawable.white_bishop_r,
+        R.drawable.white_knight_r,
+        R.drawable.white_rook_r
     )
 )
+var onload = true
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChessBoardView(viewModel: MainViewModel, navController: NavController) {
-
+    onload = true
     Scaffold(topBar = {
         TopAppBar(
             title = { Text("Puzzle - ${viewModel.selectedPuzzle?.puzzleId}") },
@@ -141,9 +141,14 @@ fun ChessBoard(puzzle: Puzzle) {
         )
     }
 
-    // PGN in Moves umwandeln
-    val pgnMoves = parsePgnToMoves(puzzle.pgn)
-
+    if (onload) {
+        val pgnMoves = parsePgnToMoves(puzzle.pgn)
+        pgnMoves.forEach { move ->
+            boardState = executeMoveFromPgn(move, boardState, currentPlayer)
+            currentPlayer = !currentPlayer
+        }
+        onload = false
+    }
 
 
     Column {
@@ -234,17 +239,6 @@ fun ChessBoard(puzzle: Puzzle) {
                         }
                     )
 
-                    // Züge nacheinander ausführen
-                    LaunchedEffect(pgnMoves) {
-                        pgnMoves.forEach { move ->
-                            // Führe Zug aus
-                            boardState = executeMoveFromPgn(move, boardState, currentPlayer)
-                            // Spieler wechseln
-                            currentPlayer = !currentPlayer
-                        }
-                    }
-
-
                 }
             }
         }
@@ -265,9 +259,12 @@ fun isCorrectPlayer(piece: Int, currentPlayer: Boolean): Boolean {
         // Weißer Spieler, prüfe ob die Figur weiß ist
         piece in listOf(
             R.drawable.white_pawn,
-            R.drawable.white_rook,
-            R.drawable.white_knight,
-            R.drawable.white_bishop,
+            R.drawable.white_rook_l,
+            R.drawable.white_rook_r,
+            R.drawable.white_knight_l,
+            R.drawable.white_knight_r,
+            R.drawable.white_bishop_l,
+            R.drawable.white_bishop_r,
             R.drawable.white_queen,
             R.drawable.white_king
         )
@@ -275,9 +272,12 @@ fun isCorrectPlayer(piece: Int, currentPlayer: Boolean): Boolean {
         // Schwarzer Spieler, prüfe ob die Figur schwarz ist
         piece in listOf(
             R.drawable.black_pawn,
-            R.drawable.black_rook,
-            R.drawable.black_knight,
-            R.drawable.black_bishop,
+            R.drawable.black_rook_l,
+            R.drawable.black_rook_r,
+            R.drawable.black_knight_l,
+            R.drawable.black_knight_r,
+            R.drawable.black_bishop_l,
+            R.drawable.black_bishop_r,
             R.drawable.black_queen,
             R.drawable.black_king
         )
@@ -356,12 +356,16 @@ fun isValidMove(
     piece: Int // Die Figur, die bewegt wird
 ): Boolean {
     val isWhite = when (piece) {
-        R.drawable.white_pawn, R.drawable.white_rook,
-        R.drawable.white_knight, R.drawable.white_bishop,
+        R.drawable.white_pawn,
+        R.drawable.white_rook_l, R.drawable.white_rook_r,
+        R.drawable.white_knight_l, R.drawable.white_knight_r,
+        R.drawable.white_bishop_l, R.drawable.white_bishop_r,
         R.drawable.white_queen, R.drawable.white_king -> true
 
-        R.drawable.black_pawn, R.drawable.black_rook,
-        R.drawable.black_knight, R.drawable.black_bishop,
+        R.drawable.black_pawn,
+        R.drawable.black_rook_l, R.drawable.black_rook_r,
+        R.drawable.black_knight_l, R.drawable.black_knight_r,
+        R.drawable.black_bishop_l, R.drawable.black_bishop_r,
         R.drawable.black_queen, R.drawable.black_king -> false
 
         else -> return false // Ungültige Figur
@@ -371,12 +375,16 @@ fun isValidMove(
     val targetPiece = board[toRow][toCol]
     if (targetPiece != 0) { // Wenn das Zielfeld nicht leer ist
         val targetIsWhite = when (targetPiece) {
-            R.drawable.white_pawn, R.drawable.white_rook,
-            R.drawable.white_knight, R.drawable.white_bishop,
+            R.drawable.white_pawn,
+            R.drawable.white_rook_l, R.drawable.white_rook_r,
+            R.drawable.white_knight_l, R.drawable.white_knight_r,
+            R.drawable.white_bishop_l, R.drawable.white_bishop_r,
             R.drawable.white_queen, R.drawable.white_king -> true
 
-            R.drawable.black_pawn, R.drawable.black_rook,
-            R.drawable.black_knight, R.drawable.black_bishop,
+            R.drawable.black_pawn,
+            R.drawable.black_rook_l, R.drawable.black_rook_r,
+            R.drawable.black_knight_l, R.drawable.black_knight_r,
+            R.drawable.black_bishop_l, R.drawable.black_bishop_r,
             R.drawable.black_queen, R.drawable.black_king -> false
 
             else -> return false
@@ -394,7 +402,8 @@ fun isValidMove(
             isWhite
         )
 
-        R.drawable.white_rook, R.drawable.black_rook -> isValidRookMove(
+        R.drawable.white_rook_l, R.drawable.white_rook_r,
+        R.drawable.black_rook_l, R.drawable.black_rook_r -> isValidRookMove(
             board,
             fromRow,
             fromCol,
@@ -402,14 +411,16 @@ fun isValidMove(
             toCol
         )
 
-        R.drawable.white_knight, R.drawable.black_knight -> isValidKnightMove(
+        R.drawable.white_knight_l, R.drawable.white_knight_r,
+        R.drawable.black_knight_l, R.drawable.black_knight_r -> isValidKnightMove(
             fromRow,
             fromCol,
             toRow,
             toCol
         )
 
-        R.drawable.white_bishop, R.drawable.black_bishop -> isValidBishopMove(
+        R.drawable.white_bishop_l, R.drawable.white_bishop_r,
+        R.drawable.black_bishop_l, R.drawable.black_bishop_r -> isValidBishopMove(
             board,
             fromRow,
             fromCol,
@@ -551,15 +562,21 @@ fun calculateFEN(
 ): String {
     val pieceMap = mapOf(
         R.drawable.white_pawn to "P",
-        R.drawable.white_rook to "R",
-        R.drawable.white_knight to "N",
-        R.drawable.white_bishop to "B",
+        R.drawable.white_rook_l to "R",
+        R.drawable.white_rook_r to "R",
+        R.drawable.white_knight_l to "N",
+        R.drawable.white_bishop_l to "B",
+        R.drawable.white_bishop_r to "B",
         R.drawable.white_queen to "Q",
         R.drawable.white_king to "K",
+
         R.drawable.black_pawn to "p",
-        R.drawable.black_rook to "r",
-        R.drawable.black_knight to "n",
-        R.drawable.black_bishop to "b",
+        R.drawable.black_rook_l to "r",
+        R.drawable.black_rook_r to "r",
+        R.drawable.black_knight_l to "n",
+        R.drawable.black_knight_r to "n",
+        R.drawable.black_bishop_l to "b",
+        R.drawable.black_bishop_r to "b",
         R.drawable.black_queen to "q",
         R.drawable.black_king to "k"
     )
@@ -621,7 +638,7 @@ fun executeMoveFromPgn(
 
         val piece = board[from.first][from.second]
         println(
-            move + " " + "piece: " + piece + " " + from.first + "|" + from.second + " " + to.first + "|" + to.second
+            move + "|${currentPlayer}: piece: ${piece}  (${from.first}, ${from.second}) to (${to.first}, ${to.second})"
         )
 
         if (isValidMove(board, from.first, from.second, to.first, to.second, piece)) {
@@ -682,9 +699,24 @@ fun findPieceMove(
 fun isPieceOfType(pieceType: Char, currentPiece: Int, isWhite: Boolean): Boolean {
     // Define piece types
     return when (pieceType) {
-        'N' -> currentPiece == if (isWhite) R.drawable.white_knight else R.drawable.black_knight
-        'B' -> currentPiece == if (isWhite) R.drawable.white_bishop else R.drawable.black_bishop
-        'R' -> currentPiece == if (isWhite) R.drawable.white_rook else R.drawable.black_rook
+        'N' -> if (isWhite) {
+            currentPiece == R.drawable.white_knight_l || currentPiece == R.drawable.white_knight_r
+        } else {
+            currentPiece == R.drawable.black_knight_l || currentPiece == R.drawable.black_knight_r
+        }
+
+        'B' -> if (isWhite) {
+            currentPiece == R.drawable.white_bishop_l || currentPiece == R.drawable.white_bishop_r
+        } else {
+            currentPiece == R.drawable.black_bishop_l || currentPiece == R.drawable.black_bishop_r
+        }
+
+        'R' -> if (isWhite) {
+            currentPiece == R.drawable.white_rook_l || currentPiece == R.drawable.white_rook_r
+        } else {
+            currentPiece == R.drawable.black_rook_l || currentPiece == R.drawable.black_rook_r
+        }
+
         'Q' -> currentPiece == if (isWhite) R.drawable.white_queen else R.drawable.black_queen
         'K' -> currentPiece == if (isWhite) R.drawable.white_king else R.drawable.black_king
         else -> false // Unsupported piece
@@ -703,15 +735,15 @@ fun convertPgnPawnMoveToCoords(
     if (move.length == 2) {
         try {
             // Das Zielfeld
-            val endFile = fileMap[move[0]] ?: return null // Der Buchstabe des Zielfelds (Spalte)
+            val file = move[0]
+            val endFile = fileMap[file] ?: return null // Der Buchstabe des Zielfelds (Spalte)
             val endRank = 8 - move[1].digitToInt()         // Die Zahl des Zielfelds (Zeile)
 
             // Der Startpunkt hängt von der Farbe des Spielers ab
             val startRank =
                 if (isWhite) 6 else 1          // Weiß startet von Reihe 6, Schwarz von Reihe 1
 
-            // Rückgabe des Zugpaars als ((startRow, startCol), (endRow, endCol))
-            return Pair(Pair(startRank, endRank), Pair(endFile, endRank))
+            return Pair(Pair(startRank, endFile), Pair(endRank, endFile))
         } catch (e: Exception) {
             return null
         }
