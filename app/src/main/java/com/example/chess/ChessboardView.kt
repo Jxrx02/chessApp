@@ -666,17 +666,17 @@ fun convertPgnMoveToCoords(
 
     // Handle piece moves like 'Nf3', 'Qd4'
     if (move.length >= 3) {
-        val pieceType = move[0]
+        val pieceType = move.substring(0, move.length - 2)
         val endFile = fileMap[move[move.length - 2]] ?: return null
         val endRank = 8 - move[move.length - 1].digitToInt()
 
-        return findPieceMove(pieceType, endRank, endFile, isWhite, board)
+        return findPieceMove(pieceType.toString(), endRank, endFile, isWhite, board)
     }
     return null
 }
 
 fun findPieceMove(
-    pieceType: Char,
+    pieceType: String,
     endRank: Int,
     endFile: Int,
     isWhite: Boolean,
@@ -697,29 +697,35 @@ fun findPieceMove(
     return null
 }
 
-fun isPieceOfType(pieceType: Char, currentPiece: Int, isWhite: Boolean): Boolean {
+fun isPieceOfType(pieceType: String, currentPiece: Int, isWhite: Boolean): Boolean {
     // Define piece types
     return when (pieceType) {
-        'N' -> if (isWhite) {
-            currentPiece == R.drawable.white_knight_l || currentPiece == R.drawable.white_knight_r
+        "Nb" -> if (isWhite) {
+            currentPiece == R.drawable.white_knight_l
         } else {
-            currentPiece == R.drawable.black_knight_l || currentPiece == R.drawable.black_knight_r
+            currentPiece == R.drawable.black_knight_l
         }
 
-        'B' -> if (isWhite) {
+        "N" -> if (isWhite) {
+            currentPiece == R.drawable.white_knight_r
+        } else {
+            currentPiece == R.drawable.black_knight_r
+        }
+
+        "B" -> if (isWhite) {
             currentPiece == R.drawable.white_bishop_l || currentPiece == R.drawable.white_bishop_r
         } else {
             currentPiece == R.drawable.black_bishop_l || currentPiece == R.drawable.black_bishop_r
         }
 
-        'R' -> if (isWhite) {
+        "R" -> if (isWhite) {
             currentPiece == R.drawable.white_rook_l || currentPiece == R.drawable.white_rook_r
         } else {
             currentPiece == R.drawable.black_rook_l || currentPiece == R.drawable.black_rook_r
         }
 
-        'Q' -> currentPiece == if (isWhite) R.drawable.white_queen else R.drawable.black_queen
-        'K' -> currentPiece == if (isWhite) R.drawable.white_king else R.drawable.black_king
+        "Q" -> currentPiece == if (isWhite) R.drawable.white_queen else R.drawable.black_queen
+        "K" -> currentPiece == if (isWhite) R.drawable.white_king else R.drawable.black_king
         else -> false // Unsupported piece
     }
 }

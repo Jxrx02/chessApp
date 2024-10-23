@@ -52,7 +52,7 @@ fun MainView(viewModel: MainViewModel, navController: NavController) {
                         viewModel.puzzleText,
                         440,
                         0,
-                        "a4",
+                        "Nf3 e6 d4 d6 Nbd2",
                         ""
                     )
                 )
