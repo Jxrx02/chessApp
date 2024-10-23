@@ -565,6 +565,7 @@ fun calculateFEN(
         R.drawable.white_rook_l to "R",
         R.drawable.white_rook_r to "R",
         R.drawable.white_knight_l to "N",
+        R.drawable.white_knight_r to "N",
         R.drawable.white_bishop_l to "B",
         R.drawable.white_bishop_r to "B",
         R.drawable.white_queen to "Q",
