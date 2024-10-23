@@ -30,6 +30,13 @@ jobs:
       run: ./gradlew assembleRelease # Builds the release APK
 
     - run: ls -la
+    - run: cd app
+    - run: ls -la
+    - run: cd ../..
+    - run: ls -la
+    - run: cd /
+    - run: ls -la
+
 
     - name: Upload APK
       uses: actions/upload-artifact@v3
