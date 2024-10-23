@@ -32,5 +32,5 @@ jobs:
     - name: Upload APK
       uses: actions/upload-artifact@v3
       with:
-        name: android-app-apk
-        path: build/outputs/app-release.apk # Adjust path if necessary
+        name: app-release
+        path: /build/outputs # Adjust path if necessary
