@@ -715,17 +715,17 @@ fun convertPgnMoveToCoords(
         move_ = move_.replace("+", "")
         //TODO: Logik für Schach setzten hinzufügen
     }
-
-    if (move_.contains("x")) {
-        move_ = move_.replace("x", "")
-        //TODO: Figur wurde geschlagen, Aktualisiere geschlagene Figuren
-    }
-
+    
 
     // Handle pawn moves (no piece letter, e.g., 'e4')
     val regex = Regex("[a-h]x[a-h][0-8]$")
     if (move_.length == 2 || move_.length == 4 && regex.matches(move_)) {
         return convertPgnPawnMoveToCoords(move_, isWhite, board)
+    }
+
+    if (move_.contains("x")) {
+        move_ = move_.replace("x", "")
+        //TODO: Figur wurde geschlagen, Aktualisiere geschlagene Figuren
     }
 
     // Handle piece moves like 'Nf3', 'Qd4'
@@ -835,14 +835,21 @@ fun convertPgnPawnMoveToCoords(
     // Bauernzüge haben nur zwei Zeichen, wie 'e4' oder 'c5'
     if (move.length == 2) {
         try {
+            val pawnId = if (isWhite) R.drawable.white_pawn else R.drawable.black_pawn
+
             // Das Zielfeld
             val file = move[0]
             val endFile = fileMap[file] ?: return null // Der Buchstabe des Zielfelds (Spalte)
             val endRank = 8 - move[1].digitToInt()         // Die Zahl des Zielfelds (Zeile)
+            var startRank: Int = if (isWhite) 6 else 1
 
+            for (row in board.indices) {
+                if (board[row][endFile] == pawnId) {
+                    startRank = row // Finde die Startreihe für den Bauern
+                    break
+                }
+            }
             // Der Startpunkt hängt von der Farbe des Spielers ab
-            val startRank =
-                if (isWhite) 6 else 1          // Weiß startet von Reihe 6, Schwarz von Reihe 1
 
             return Pair(Pair(startRank, endFile), Pair(endRank, endFile))
         } catch (e: Exception) {
