@@ -659,18 +659,35 @@ fun convertPgnMoveToCoords(
     val fileMap =
         mapOf('a' to 0, 'b' to 1, 'c' to 2, 'd' to 3, 'e' to 4, 'f' to 5, 'g' to 6, 'h' to 7)
 
+    var move_ = move
+    if (move_.contains("+")) {
+        move_ = move_.replace("+", "")
+        //TODO: Logik für Schach setzten hinzufügen
+    }
+
+    if (move_.contains("x")) {
+        move_ = move_.replace("x", "")
+        //TODO: Figur wurde geschlagen, Aktualisiere geschlagene Figuren
+    }
+
+
     // Handle pawn moves (no piece letter, e.g., 'e4')
-    if (move.length == 2) {
-        return convertPgnPawnMoveToCoords(move, isWhite)
+    val regex = Regex("[a-h]x[a-h][0-8]$")
+    if (move_.length == 2 || move_.length == 4 && regex.matches(move_)) {
+        return convertPgnPawnMoveToCoords(move_, isWhite, board)
+    }
+
+    if (move_.equals("O-O") || move_.equals("O-O-O")) {
+        return convertPgnCastleMoveToCoords(move_, isWhite, board)
     }
 
     // Handle piece moves like 'Nf3', 'Qd4'
-    if (move.length >= 3) {
-        val pieceType = move.substring(0, move.length - 2)
-        val endFile = fileMap[move[move.length - 2]] ?: return null
-        val endRank = 8 - move[move.length - 1].digitToInt()
+    if (move_.length >= 3) {
+        val pieceType = move_.substring(0, move_.length - 2)
+        val endFile = fileMap[move_[move_.length - 2]] ?: return null
+        val endRank = 8 - move_[move_.length - 1].digitToInt()
 
-        return findPieceMove(pieceType.toString(), endRank, endFile, isWhite, board)
+        return findPieceMove(pieceType, endRank, endFile, isWhite, board)
     }
     return null
 }
@@ -718,6 +735,7 @@ fun isPieceOfType(pieceType: String, currentPiece: Int, isWhite: Boolean): Boole
             currentPiece == R.drawable.black_bishop_l || currentPiece == R.drawable.black_bishop_r
         }
 
+
         "R" -> if (isWhite) {
             currentPiece == R.drawable.white_rook_l || currentPiece == R.drawable.white_rook_r
         } else {
@@ -733,7 +751,8 @@ fun isPieceOfType(pieceType: String, currentPiece: Int, isWhite: Boolean): Boole
 
 fun convertPgnPawnMoveToCoords(
     move: String,
-    isWhite: Boolean
+    isWhite: Boolean,
+    board: Array<Array<Int>>
 ): Pair<Pair<Int, Int>, Pair<Int, Int>>? {
     val fileMap =
         mapOf('a' to 0, 'b' to 1, 'c' to 2, 'd' to 3, 'e' to 4, 'f' to 5, 'g' to 6, 'h' to 7)
@@ -754,7 +773,62 @@ fun convertPgnPawnMoveToCoords(
         } catch (e: Exception) {
             return null
         }
+    } else { // move.length == 4
+        try {
+            val file_from = move[0] // Der Startspaltenbuchstabe
+            val file_to = move[2]   // Der Zielspaltenbuchstabe
+            val startFile = fileMap[file_from] ?: return null // Der Startspaltenindex
+            val endFile = fileMap[file_to] ?: return null // Der Zielspaltenindex
+            val endRank = 8 - move[3].digitToInt() // Die Zielzeile (1-8 wird zu 7-0)
+
+            // Finde den Bauern anhand seiner ID (weißer oder schwarzer Bauer)
+            val pawnId = if (isWhite) R.drawable.white_pawn else R.drawable.black_pawn
+
+            // Iteriere über das Board, um die Position des Bauern zu finden
+            var startRank: Int? = null
+            for (row in board.indices) {
+                if (board[row][startFile] == pawnId) {
+                    startRank = row // Finde die Startreihe für den Bauern
+                    break
+                }
+            }
+
+            // Wenn kein Bauer auf der Startposition gefunden wurde, gib null zurück
+            if (startRank == null) return null
+
+            return Pair(Pair(startRank, startFile), Pair(endRank, endFile))
+        } catch (e: Exception) {
+            return null
+        }
     }
-    return null
 }
 
+fun convertPgnCastleMoveToCoords(
+    move: String,
+    isWhite: Boolean,
+    board: Array<Array<Int>>
+): Pair<Pair<Int, Int>, Pair<Int, Int>>? {
+    // Bestimme die Positionen des Königs und des Turms für kurze und lange Rochade
+    if (move == "O-O") {
+        // Kurze Rochade
+        return if (isWhite) {
+            // Weiß: König von e1 nach g1, Turm von h1 nach f1
+            Pair(Pair(7, 4), Pair(7, 6)) // König e1 -> g1
+        } else {
+            // Schwarz: König von e8 nach g8, Turm von h8 nach f8
+            Pair(Pair(0, 4), Pair(0, 6)) // König e8 -> g8
+        }
+    } else if (move == "O-O-O") {
+        // Lange Rochade
+        return if (isWhite) {
+            // Weiß: König von e1 nach c1, Turm von a1 nach d1
+            Pair(Pair(7, 4), Pair(7, 2)) // König e1 -> c1
+        } else {
+            // Schwarz: König von e8 nach c8, Turm von a8 nach d8
+            Pair(Pair(0, 4), Pair(0, 2)) // König e8 -> c8
+        }
+    }
+
+    // Falls kein Rochadezug erkannt wird, gib `null` zurück
+    return null
+}
