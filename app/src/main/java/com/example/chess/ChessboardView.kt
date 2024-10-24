@@ -793,13 +793,13 @@ fun isPieceOfType(pieceType: String, currentPiece: Int, isWhite: Boolean): Boole
     // Define piece types
     return when (pieceType) {
         "Nb" -> if (isWhite) {
-            currentPiece == R.drawable.white_knight_l
+            currentPiece == R.drawable.white_knight_r
         } else {
             currentPiece == R.drawable.black_knight_l
         }
 
         "N" -> if (isWhite) {
-            currentPiece == R.drawable.white_knight_r
+            currentPiece == R.drawable.white_knight_l
         } else {
             currentPiece == R.drawable.black_knight_r
         }
