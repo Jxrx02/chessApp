@@ -121,7 +121,7 @@ fun ChessBoardView(viewModel: MainViewModel, navController: NavController) {
 
 @Composable
 fun ChessBoard(puzzle: Puzzle) {
-    var boardState by remember { mutableStateOf(initialBoardWithImages) }
+    var board by remember { mutableStateOf(initialBoardWithImages) }
     var selectedPiece by remember { mutableStateOf<Pair<Int, Int>?>(null) }
     var possibleMoves by remember { mutableStateOf<List<Pair<Int, Int>>>(emptyList()) }
     var currentPlayer by remember { mutableStateOf(true) } // true = Weiß, false = Schwarz
@@ -133,7 +133,7 @@ fun ChessBoard(puzzle: Puzzle) {
     var fenNotation by remember {
         mutableStateOf(
             calculateFEN(
-                boardState,
+                board,
                 currentPlayer,
                 halfMoveClock,
                 fullMoveNumber
@@ -144,7 +144,7 @@ fun ChessBoard(puzzle: Puzzle) {
     if (onload) {
         val pgnMoves = parsePgnToMoves(puzzle.pgn)
         pgnMoves.forEach { move ->
-            boardState = executeMoveFromPgn(move, boardState, currentPlayer)
+            board = executeMoveFromPgn(move, board, currentPlayer)
             currentPlayer = !currentPlayer
         }
         onload = false
@@ -167,11 +167,11 @@ fun ChessBoard(puzzle: Puzzle) {
                     ChessTileWithPiece(
                         row = row,
                         col = col,
-                        pieceResId = boardState[row][col],
+                        pieceResId = board[row][col],
                         isSelected = selectedPiece == Pair(row, col),
                         isPossibleMove = isPossibleMove,
                         onTileClick = { clickedRow, clickedCol ->
-                            val piece = boardState[clickedRow][clickedCol]
+                            val piece = board[clickedRow][clickedCol]
 
                             if (selectedPiece == null && piece != 0 && isCorrectPlayer(
                                     piece,
@@ -186,13 +186,13 @@ fun ChessBoard(puzzle: Puzzle) {
                                     Toast.LENGTH_SHORT
                                 ).show()
 
-                                possibleMoves = getPossibleMoves(boardState, clickedRow, clickedCol)
+                                possibleMoves = getPossibleMoves(board, clickedRow, clickedCol)
                             } else if (selectedPiece != null) {
                                 val (selectedRow, selectedCol) = selectedPiece!!
-                                val selectedPieceType = boardState[selectedRow][selectedCol]
+                                val selectedPieceType = board[selectedRow][selectedCol]
 
                                 if (isValidMove(
-                                        boardState,
+                                        board,
                                         selectedRow,
                                         selectedCol,
                                         clickedRow,
@@ -201,7 +201,7 @@ fun ChessBoard(puzzle: Puzzle) {
                                     )
                                 ) {
                                     // Zug ausführen
-                                    boardState = boardState.movePiece(
+                                    board = board.movePiece(
                                         selectedRow,
                                         selectedCol,
                                         clickedRow,
@@ -209,7 +209,7 @@ fun ChessBoard(puzzle: Puzzle) {
                                     )
 
                                     // Halbzugzähler und Vollzugzähler aktualisieren
-                                    if (selectedPieceType == R.drawable.white_pawn || selectedPieceType == R.drawable.black_pawn || boardState[clickedRow][clickedCol] != 0) {
+                                    if (selectedPieceType == R.drawable.white_pawn || selectedPieceType == R.drawable.black_pawn || board[clickedRow][clickedCol] != 0) {
                                         halfMoveClock =
                                             0 // Setze Halbzugzähler zurück, wenn ein Bauer gezogen oder eine Figur geschlagen wurde
                                     } else {
@@ -225,7 +225,7 @@ fun ChessBoard(puzzle: Puzzle) {
 
                                     // FEN-Notation aktualisieren
                                     fenNotation = calculateFEN(
-                                        boardState,
+                                        board,
                                         currentPlayer,
                                         halfMoveClock,
                                         fullMoveNumber
@@ -437,10 +437,14 @@ fun isValidMove(
         )
 
         R.drawable.white_king, R.drawable.black_king -> isValidKingMove(
+            board,
             fromRow,
             fromCol,
             toRow,
-            toCol
+            toCol,
+            false,
+            false,
+            isWhite
         )
 
         else -> false
@@ -478,7 +482,6 @@ fun isValidPawnMove(
     return false
 }
 
-// Beispiel: Überprüfe Turm-Zug
 fun isValidRookMove(
     board: Array<Array<Int>>,
     fromRow: Int, fromCol: Int,
@@ -502,14 +505,12 @@ fun isValidRookMove(
     return true
 }
 
-// Beispiel: Überprüfe Springer-Zug
 fun isValidKnightMove(fromRow: Int, fromCol: Int, toRow: Int, toCol: Int): Boolean {
     val rowDiff = abs(fromRow - toRow)
     val colDiff = abs(fromCol - toCol)
     return (rowDiff == 2 && colDiff == 1) || (rowDiff == 1 && colDiff == 2)
 }
 
-// Beispiel: Überprüfe Läufer-Zug
 fun isValidBishopMove(
     board: Array<Array<Int>>,
     fromRow: Int, fromCol: Int,
@@ -531,7 +532,6 @@ fun isValidBishopMove(
     return true
 }
 
-// Beispiel: Überprüfe Dame-Zug (Kombination aus Turm und Läufer)
 fun isValidQueenMove(
     board: Array<Array<Int>>,
     fromRow: Int, fromCol: Int,
@@ -546,11 +546,58 @@ fun isValidQueenMove(
     )
 }
 
-// Beispiel: Überprüfe König-Zug
-fun isValidKingMove(fromRow: Int, fromCol: Int, toRow: Int, toCol: Int): Boolean {
+fun isValidKingMove(
+    board: Array<Array<Int>>,
+    fromRow: Int, fromCol: Int,
+    toRow: Int, toCol: Int,
+    hasKingMoved: Boolean,
+    hasRookMoved: Boolean,
+    isWhite: Boolean
+): Boolean {
     val rowDiff = abs(fromRow - toRow)
     val colDiff = abs(fromCol - toCol)
-    return rowDiff <= 1 && colDiff <= 1
+
+    // Überprüfung der Rochade
+    if (!hasKingMoved && rowDiff == 0 && colDiff == 2) {
+        // Kurze Rochade (O-O)
+        if (toCol > fromCol) {
+            val rookCol = 7
+            if (!hasRookMoved && isValidRookMove(board, fromRow, fromCol, fromRow, rookCol)) {
+                // Prüfen, ob der Weg frei ist und die Felder nicht bedroht sind
+                return isPathClearForCastling(board, fromRow, fromCol, toCol, isWhite)
+            }
+        }
+        // Lange Rochade (O-O-O)
+        if (toCol < fromCol) {
+            val rookCol = 0
+            if (!hasRookMoved && isValidRookMove(board, fromRow, fromCol, fromRow, rookCol)) {
+                // Prüfen, ob der Weg frei ist und die Felder nicht bedroht sind
+                return isPathClearForCastling(board, fromRow, fromCol, toCol, isWhite)
+            }
+        }
+    }
+    // Normale Königszüge (ein Feld in jede Richtung)
+    if (rowDiff <= 1 && colDiff <= 1) return true
+
+    return false
+}
+
+// Hilfsfunktion zur Überprüfung der bedrohten Felder während der Rochade
+fun isPathClearForCastling(
+    board: Array<Array<Int>>,
+    row: Int, fromCol: Int, toCol: Int,
+    isWhite: Boolean
+): Boolean {
+    val minCol = minOf(fromCol, toCol)
+    val maxCol = maxOf(fromCol, toCol)
+
+    // Überprüfen, ob der Weg blockiert ist und die Felder nicht bedroht sind
+    for (col in minCol..maxCol) {
+        if (board[row][col] != 0) return false
+        // Hier kannst du noch eine Funktion aufrufen, die überprüft, ob das Feld bedroht ist
+        // z.B. if (isSquareAttacked(row, col, isWhite)) return false
+    }
+    return true
 }
 
 
@@ -629,17 +676,21 @@ fun parsePgnToMoves(pgn: String): List<String> {
 fun executeMoveFromPgn(
     move: String,
     board: Array<Array<Int>>,
-    currentPlayer: Boolean
+    isWhite: Boolean
 ): Array<Array<Int>> {
 
-    val moveCoords = convertPgnMoveToCoords(move, currentPlayer, board)
+    if (move.equals("O-O") || move.equals("O-O-O")) {
+        return doCastle(board, move, isWhite)
+    }
+
+    val moveCoords = convertPgnMoveToCoords(move, isWhite, board)
 
     if (moveCoords != null) {
         val (from, to) = moveCoords
 
         val piece = board[from.first][from.second]
         println(
-            move + "|${currentPlayer}: piece: ${piece}  (${from.first}, ${from.second}) to (${to.first}, ${to.second})"
+            move + "|${isWhite}: piece: ${piece}  (${from.first}, ${from.second}) to (${to.first}, ${to.second})"
         )
 
         if (isValidMove(board, from.first, from.second, to.first, to.second, piece)) {
@@ -677,10 +728,6 @@ fun convertPgnMoveToCoords(
         return convertPgnPawnMoveToCoords(move_, isWhite, board)
     }
 
-    if (move_.equals("O-O") || move_.equals("O-O-O")) {
-        return convertPgnCastleMoveToCoords(move_, isWhite, board)
-    }
-
     // Handle piece moves like 'Nf3', 'Qd4'
     if (move_.length >= 3) {
         val pieceType = move_.substring(0, move_.length - 2)
@@ -690,6 +737,34 @@ fun convertPgnMoveToCoords(
         return findPieceMove(pieceType, endRank, endFile, isWhite, board)
     }
     return null
+}
+
+fun doCastle(board: Array<Array<Int>>, move: String, isWhite: Boolean): Array<Array<Int>> {
+    var board_ = board.clone()
+    if (move == "O-O") {
+        // Kurze Rochade
+        if (isWhite) {
+            // Turm
+            board_ = board.movePiece(7, 7, 7, 5)
+                .movePiece(7, 4, 7, 6)  // König
+        } else {
+            board_ = board.movePiece(0, 7, 0, 5)   // Turm
+                .movePiece(0, 4, 0, 6)            // König
+
+        }
+    } else if (move == "O-O-O") {
+        // Lange Rochade
+        if (isWhite) {
+            //Turm
+            board_ = board.movePiece(7, 7, 7, 3)
+                .movePiece(7, 4, 7, 2)
+        } else {
+            //Turm
+            board_ = board.movePiece(0, 7, 0, 3)
+                .movePiece(0, 4, 0, 2)
+        }
+    }
+    return board_
 }
 
 fun findPieceMove(
@@ -801,34 +876,4 @@ fun convertPgnPawnMoveToCoords(
             return null
         }
     }
-}
-
-fun convertPgnCastleMoveToCoords(
-    move: String,
-    isWhite: Boolean,
-    board: Array<Array<Int>>
-): Pair<Pair<Int, Int>, Pair<Int, Int>>? {
-    // Bestimme die Positionen des Königs und des Turms für kurze und lange Rochade
-    if (move == "O-O") {
-        // Kurze Rochade
-        return if (isWhite) {
-            // Weiß: König von e1 nach g1, Turm von h1 nach f1
-            Pair(Pair(7, 4), Pair(7, 6)) // König e1 -> g1
-        } else {
-            // Schwarz: König von e8 nach g8, Turm von h8 nach f8
-            Pair(Pair(0, 4), Pair(0, 6)) // König e8 -> g8
-        }
-    } else if (move == "O-O-O") {
-        // Lange Rochade
-        return if (isWhite) {
-            // Weiß: König von e1 nach c1, Turm von a1 nach d1
-            Pair(Pair(7, 4), Pair(7, 2)) // König e1 -> c1
-        } else {
-            // Schwarz: König von e8 nach c8, Turm von a8 nach d8
-            Pair(Pair(0, 4), Pair(0, 2)) // König e8 -> c8
-        }
-    }
-
-    // Falls kein Rochadezug erkannt wird, gib `null` zurück
-    return null
 }
