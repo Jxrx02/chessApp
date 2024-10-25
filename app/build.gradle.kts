@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.ksp)
+    kotlin("plugin.serialization") version "1.9.22"
 
 }
 
@@ -77,4 +78,8 @@ dependencies {
     ksp(libs.room.compiler)
     implementation(libs.coroutines)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.ktor.client.android)
+    implementation(libs.ktor.serialization.kotlinx.json)
+    implementation(libs.ktor.client.serialization)
+    implementation(libs.ktor.client.content.negotiation)
 }
