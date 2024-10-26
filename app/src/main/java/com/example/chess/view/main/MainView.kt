@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -45,27 +46,21 @@ fun MainView(viewModel: MainViewModel, navController: NavController) {
                 .fillMaxHeight(),
             verticalArrangement = Arrangement.Center
         ) {
-            InputSection(puzzleText = viewModel.puzzleText, puzzles = puzzles, onInsert = {
-                viewModel.insert(
-                    puzzle = Puzzle(
-                        0,
-                        viewModel.puzzleText,
-                        440,
-                        0,
-                        "e3 e6 Nc3 Nc6 Nge2 Nce7",
-                        ""
-                    )
-                )
-            },
-                changeNoteText = {
-                    viewModel.puzzleText = it
+            if (viewModel.loading) {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+            } else {
+                InputSection(puzzleText = viewModel.puzzleText, puzzles = puzzles, onInsert = {
+                    viewModel.insert()
                 },
-                onDeleteAll = {
-                    if (puzzles.isNotEmpty()) {
-                        viewModel.deleteAll()
-                    }
-                })
-
+                    changeNoteText = {
+                        viewModel.puzzleText = it
+                    },
+                    onDeleteAll = {
+                        if (puzzles.isNotEmpty()) {
+                            viewModel.deleteAll()
+                        }
+                    })
+            }
             NoteList(puzzles = puzzles,
                 onClickPuzzle = {
                     Log.i("Puzzle", "Auf Item ${it} wurde geklickt")
