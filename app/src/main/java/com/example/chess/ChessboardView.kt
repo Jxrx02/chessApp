@@ -129,6 +129,14 @@ fun ChessBoard(puzzle: Puzzle) {
     var fullMoveNumber by remember { mutableStateOf(1) } // Zähler für volle Züge
     val context = LocalContext.current // Kontext für den Toast
 
+    if (onload) {
+        val pgnMoves = parsePgnToMoves(puzzle.pgn)
+        pgnMoves.forEach { move ->
+            board = executeMoveFromPgn(move, board, currentPlayer)
+            currentPlayer = !currentPlayer
+        }
+        onload = false
+    }
     // FEN-Notation initialisieren
     var fenNotation by remember {
         mutableStateOf(
@@ -140,16 +148,6 @@ fun ChessBoard(puzzle: Puzzle) {
             )
         )
     }
-
-    if (onload) {
-        val pgnMoves = parsePgnToMoves(puzzle.pgn)
-        pgnMoves.forEach { move ->
-            board = executeMoveFromPgn(move, board, currentPlayer)
-            currentPlayer = !currentPlayer
-        }
-        onload = false
-    }
-
 
     Column {
         // FEN-Notation anzeigen
