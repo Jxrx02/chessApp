@@ -1,6 +1,5 @@
 package com.example.chess
 
-import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -24,7 +23,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -127,7 +125,6 @@ fun ChessBoard(puzzle: Puzzle) {
     var currentPlayer by remember { mutableStateOf(true) } // true = Weiß, false = Schwarz
     var halfMoveClock by remember { mutableStateOf(0) }  // Halbzüge seit dem letzten Schlagen oder Bauernzug
     var fullMoveNumber by remember { mutableStateOf(1) } // Zähler für volle Züge
-    val context = LocalContext.current // Kontext für den Toast
 
     if (onload) {
         val pgnMoves = parsePgnToMoves(puzzle.pgn)
@@ -178,11 +175,6 @@ fun ChessBoard(puzzle: Puzzle) {
                             ) {
                                 // Figur auswählen
                                 selectedPiece = Pair(clickedRow, clickedCol)
-                                Toast.makeText(
-                                    context,
-                                    selectedPiece.toString(),
-                                    Toast.LENGTH_SHORT
-                                ).show()
 
                                 possibleMoves = getPossibleMoves(board, clickedRow, clickedCol)
                             } else if (selectedPiece != null) {
@@ -294,7 +286,8 @@ fun ChessTileWithPiece(
 ) {
     val isLightTile = (row + col) % 2 == 0
     val backgroundColor = when {
-        isPossibleMove -> Color.Red // Möglicher Zug
+        isPossibleMove && !isLightTile -> Color(0xFFFFC1C1)
+        isPossibleMove && isLightTile -> Color(0xFFFFE2E2)
         isSelected -> Color.Yellow // Ausgewählte Figur
         isLightTile -> Color.LightGray
         else -> Color.DarkGray
