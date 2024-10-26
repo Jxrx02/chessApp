@@ -315,6 +315,26 @@ fun ChessTileWithPiece(
                 modifier = Modifier.fillMaxSize()
             )
         }
+        if (col == 0) {
+            Text(
+                text = (8 - row).toString(),
+                color = if (isLightTile) Color.Black else Color.White,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(4.dp)
+            )
+        }
+
+        if (row == 7) {
+            Text(
+                text = ('a' + col).toString(),
+                color = if (isLightTile) Color.Black else Color.White,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(1.dp)
+
+            )
+        }
     }
 }
 
