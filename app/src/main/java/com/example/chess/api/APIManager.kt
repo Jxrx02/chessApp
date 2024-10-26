@@ -17,7 +17,7 @@ import io.ktor.serialization.kotlinx.json.json
 import io.ktor.utils.io.CancellationException
 import kotlinx.serialization.json.Json
 
-class APIManager {
+class APIManager(id: String) {
     // no api key required
     var jsonHttpClient = HttpClient {
         expectSuccess = true
@@ -29,7 +29,8 @@ class APIManager {
         defaultRequest {
             url.host = "lichess.org"
             url.protocol = URLProtocol.HTTPS
-            url.encodedPath = "/api/" + url.encodedPath
+
+            url.encodedPath = "/api/puzzle/${id}"
             Log.w("url", url.toString())
             contentType(ContentType.Application.Json)
         }

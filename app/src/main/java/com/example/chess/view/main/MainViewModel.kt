@@ -9,10 +9,13 @@ import androidx.lifecycle.viewModelScope
 import com.example.chess.database.Puzzle
 import com.example.chess.database.PuzzleDatabase
 import com.example.chess.database.PuzzleRepository
+import com.example.chess.dto.GameDto
 import com.example.chess.dto.PuzzleDto
+import com.example.chess.dto.PuzzleInfoDto
 import com.example.chess.service.PuzzleService
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
+
 class MainViewModel : ViewModel() {
     private lateinit var repository: PuzzleRepository
 
@@ -22,30 +25,47 @@ class MainViewModel : ViewModel() {
     var errorMessage: String by mutableStateOf("")
     var loading: Boolean by mutableStateOf(false)
     private val puzzleService = PuzzleService()
-    var puzzle: PuzzleDto by mutableStateOf(PuzzleDto(0, "", 0, 0, "", ""))
+    var puzzle: PuzzleDto by mutableStateOf(
+        PuzzleDto(
+            GameDto(
+                id = "",
+                rated = true,
+                pgn = ""
+            ), PuzzleInfoDto(
+                id = "",
+                rating = 0,
+                plays = 0,
+                solution = emptyList()
+            )
+        )
+    )
 
     fun initialize(database: PuzzleDatabase) {
         repository = PuzzleRepository(database.puzzleDao)
     }
 
-    fun insert() = viewModelScope.launch {
+    fun insert(daily: Boolean) = viewModelScope.launch {
         errorMessage = ""
         loading = true
         Log.w("Puzzle", "Fetching puzzle")
         try {
-            val puzzleRequest = puzzleService.getPuzzle(puzzleText)
+            val puzzleRequest: PuzzleDto = if (daily) {
+                puzzleService.getDailyPuzzle()
+            } else {
+                puzzleService.getPuzzle(puzzleText)
+            }
             Log.i("Puzzle", "$puzzleText $puzzleRequest from API")
             loading = false
             puzzle = puzzleRequest
 
             // Convert PuzzleDto to Puzzle and insert
             val puzzleDatabase = Puzzle(
-                puzzle.id,
-                puzzle.puzzleId,
-                puzzle.rating,
-                puzzle.plays,
-                puzzle.pgn,
-                puzzle.solution
+                0,
+                puzzle.puzzle.id,
+                puzzle.puzzle.rating,
+                puzzle.puzzle.plays,
+                puzzle.game.pgn,
+                puzzle.puzzle.solution.toString()
             )
 
             repository.insert(puzzleDatabase)
@@ -65,5 +85,4 @@ class MainViewModel : ViewModel() {
     fun delete(puzzle: Puzzle) = viewModelScope.launch {
         repository.delete(puzzle)
     }
-}
 }

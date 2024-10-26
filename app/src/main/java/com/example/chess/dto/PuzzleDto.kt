@@ -4,10 +4,21 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class PuzzleDto(
-    val id: Int,
-    val puzzleId: String,
+    val game: GameDto,
+    val puzzle: PuzzleInfoDto,
+)
+
+@Serializable
+data class GameDto(
+    val id: String,
+    val rated: Boolean,
+    val pgn: String,
+)
+
+@Serializable
+data class PuzzleInfoDto(
+    val id: String,
     val rating: Int,
     val plays: Int,
-    val pgn: String,
-    val solution: String
+    val solution: List<String>
 )

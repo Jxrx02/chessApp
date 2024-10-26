@@ -6,13 +6,14 @@ import io.ktor.client.call.body
 import io.ktor.client.request.get
 
 class PuzzleService {
-    private val apiManager = APIManager()
     suspend fun getDailyPuzzle(): PuzzleDto {
-        return apiManager.jsonHttpClient.get("puzzle/daily").body()
+        val apiManager = APIManager("daily")
+        return apiManager.jsonHttpClient.get("").body()
     }
 
     suspend fun getPuzzle(id: String): PuzzleDto {
-        return apiManager.jsonHttpClient.get("puzzle/${id}").body()
+        val apiManager = APIManager(id)
+        return apiManager.jsonHttpClient.get("").body()
     }
 
 }

@@ -49,9 +49,10 @@ fun MainView(viewModel: MainViewModel, navController: NavController) {
             if (viewModel.loading) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
             } else {
-                InputSection(puzzleText = viewModel.puzzleText, puzzles = puzzles, onInsert = {
-                    viewModel.insert()
-                },
+                InputSection(
+                    puzzleText = viewModel.puzzleText, puzzles = puzzles, onInsert = {
+                        viewModel.insert(false)
+                    },
                     changeNoteText = {
                         viewModel.puzzleText = it
                     },
@@ -59,7 +60,11 @@ fun MainView(viewModel: MainViewModel, navController: NavController) {
                         if (puzzles.isNotEmpty()) {
                             viewModel.deleteAll()
                         }
-                    })
+                    },
+                    onDaily = {
+                        viewModel.insert(true)
+                    }
+                )
             }
             NoteList(puzzles = puzzles,
                 onClickPuzzle = {
@@ -81,11 +86,15 @@ fun InputSection(
     puzzles: List<Puzzle>,
     changeNoteText: (String) -> (Unit),
     onInsert: () -> (Unit),
-    onDeleteAll: (List<Puzzle>) -> (Unit)
+    onDeleteAll: (List<Puzzle>) -> (Unit),
+    onDaily: () -> (Unit)
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        Button(onClick = { onDaily() }, modifier = Modifier.padding(top = 10.dp)) {
+            Text("Tägliches Puzzle abrufen")
+        }
         TextField(
             value = puzzleText,
             onValueChange = { changeNoteText(it) },
