@@ -508,6 +508,7 @@ fun isValidRookMove(
 fun isValidKnightMove(fromRow: Int, fromCol: Int, toRow: Int, toCol: Int): Boolean {
     val rowDiff = abs(fromRow - toRow)
     val colDiff = abs(fromCol - toCol)
+    if (colDiff == 0 || rowDiff == 0) return false
     return (rowDiff == 2 && colDiff == 1) || (rowDiff == 1 && colDiff == 2)
 }
 
@@ -715,7 +716,7 @@ fun convertPgnMoveToCoords(
         move_ = move_.replace("+", "")
         //TODO: Logik für Schach setzten hinzufügen
     }
-    
+
 
     // Handle pawn moves (no piece letter, e.g., 'e4')
     val regex = Regex("[a-h]x[a-h][0-8]$")
@@ -725,7 +726,7 @@ fun convertPgnMoveToCoords(
 
     if (move_.contains("x")) {
         move_ = move_.replace("x", "")
-        //TODO: Figur wurde geschlagen, Aktualisiere geschlagene Figuren
+        //TODO: Figur wurde geschlagen, Aktualisiere geschlagene Figuren (nicht auf dem Spielfeld)
     }
 
     // Handle piece moves like 'Nf3', 'Qd4'
@@ -734,7 +735,7 @@ fun convertPgnMoveToCoords(
         val endFile = fileMap[move_[move_.length - 2]] ?: return null
         val endRank = 8 - move_[move_.length - 1].digitToInt()
 
-        return findPieceMove(pieceType, endRank, endFile, isWhite, board)
+        return findPieceMove(pieceType, endRank, endFile, isWhite, board, fileMap)
     }
     return null
 }
@@ -772,16 +773,33 @@ fun findPieceMove(
     endRank: Int,
     endFile: Int,
     isWhite: Boolean,
-    board: Array<Array<Int>>
+    board: Array<Array<Int>>,
+    fileMap: Map<Char, Int>
 ): Pair<Pair<Int, Int>, Pair<Int, Int>>? {
-    // Search for the piece on the board that can move to (endRank, endFile)
+    var specificFile: Int? = null
+    var specificRank: Int? = null
+
+    // Prüfen, ob eine spezifische Spalte oder Reihe im Zug angegeben ist
+    if (pieceType.length == 2 && pieceType[1] in 'a'..'h') {
+        // Wenn das zweite Zeichen ein Buchstabe ist, ist es die Spalte
+        specificFile = fileMap[pieceType[1]]
+    } else if (pieceType.length == 2 && pieceType[1].isDigit()) {
+        // Wenn das zweite Zeichen eine Zahl ist, ist es die Reihe
+        specificRank = 8 - pieceType[1].digitToInt()
+    }
+
+
+    // Suche nach der spezifischen Figur, die den Zug machen kann
     for (i in 0..7) {
         for (j in 0..7) {
             val currentPiece = board[i][j]
-            if (isPieceOfType(pieceType, currentPiece, isWhite)) {
-                // Check if this piece can move to the target square
-                if (isValidMove(board, i, j, endRank, endFile, currentPiece)) {
-                    return Pair(Pair(i, j), Pair(endRank, endFile))
+            if (isPieceOfType(pieceType[0].toString(), currentPiece, isWhite)) {
+                // Überprüfe ob die Figur in der spezifizierten Spalte oder Reihe ist
+                if ((specificFile == null || j == specificFile) && (specificRank == null || i == specificRank)) {
+                    // Prüfen, ob diese Figur zum Ziel bewegen kann
+                    if (isValidMove(board, i, j, endRank, endFile, currentPiece)) {
+                        return Pair(Pair(i, j), Pair(endRank, endFile))
+                    }
                 }
             }
         }
@@ -789,20 +807,16 @@ fun findPieceMove(
     return null
 }
 
+
 fun isPieceOfType(pieceType: String, currentPiece: Int, isWhite: Boolean): Boolean {
     // Define piece types
     return when (pieceType) {
-        "Nb" -> if (isWhite) {
-            currentPiece == R.drawable.white_knight_r
+        "N" -> if (isWhite) {
+            currentPiece == R.drawable.white_knight_l || currentPiece == R.drawable.white_knight_r
         } else {
-            currentPiece == R.drawable.black_knight_l
+            currentPiece == R.drawable.black_knight_l || currentPiece == R.drawable.black_knight_r
         }
 
-        "N" -> if (isWhite) {
-            currentPiece == R.drawable.white_knight_l
-        } else {
-            currentPiece == R.drawable.black_knight_r
-        }
 
         "B" -> if (isWhite) {
             currentPiece == R.drawable.white_bishop_l || currentPiece == R.drawable.white_bishop_r
