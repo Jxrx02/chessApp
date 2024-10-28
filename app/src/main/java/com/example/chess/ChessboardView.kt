@@ -15,6 +15,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -77,7 +78,6 @@ val initialBoardWithImages = arrayOf(
         R.drawable.white_rook_r
     )
 )
-var onload = true
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -125,14 +125,15 @@ fun ChessBoard(puzzle: Puzzle) {
     var halfMoveClock by remember { mutableStateOf(0) }  // Halbzüge seit dem letzten Schlagen oder Bauernzug
     var fullMoveNumber by remember { mutableStateOf(1) } // Zähler für volle Züge
 
-    if (onload) {
+
+    LaunchedEffect(Unit) {
         val pgnMoves = parsePgnToMoves(puzzle.pgn)
         pgnMoves.forEach { move ->
             board = executeMoveFromPgn(move, board, currentPlayer)
             currentPlayer = !currentPlayer
         }
-        onload = false
     }
+
     // FEN-Notation initialisieren
     var fenNotation by remember {
         mutableStateOf(
