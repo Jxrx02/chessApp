@@ -82,7 +82,6 @@ var onload = true
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChessBoardView(viewModel: MainViewModel, navController: NavController) {
-    onload = true
     Scaffold(topBar = {
         TopAppBar(
             title = { Text("Puzzle - ${viewModel.selectedPuzzle?.puzzleId}") },
@@ -228,6 +227,7 @@ fun ChessBoard(puzzle: Puzzle) {
                             }
                         }
                     )
+
 
                 }
             }
